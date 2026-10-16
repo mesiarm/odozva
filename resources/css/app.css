@@ -4,6 +4,32 @@
 @source '../../storage/framework/views/*.php';
 
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+    --font-sans: 'DM Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-display: 'Fraunces', ui-serif, Georgia, serif;
+
+    --color-paper: #f7f3fb;
+    --color-ink: #2b2140;
+    --color-subtle: #54496b;
+    --color-muted: #6f6486;
+    --color-line: #e3dbf0;
+    --color-rule: #cfc4e3;
+    --color-soft: #ebe4f7;
+    --color-accent: #b03a7a;
+    --color-highlight: #2b6cb0;
+    --color-later: #7a5a00;
+    --color-later-soft: #fff0c2;
+
+    --color-unsent: #41505e;
+    --color-unsent-soft: #e8ecf0;
+    --color-sent: #1b4f8a;
+    --color-sent-soft: #e1ecf8;
+    --color-reply: #0b5e54;
+    --color-reply-soft: #ddf1ec;
+    --color-interview: #4b2e9a;
+    --color-interview-soft: #ede7f9;
+    --color-waiting: #7a4a07;
+    --color-waiting-soft: #fbebcb;
+    --color-rejected: #8f1d2c;
+    --color-rejected-soft: #f6e1e1;
 }
