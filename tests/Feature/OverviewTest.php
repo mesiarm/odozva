@@ -1,0 +1,96 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Enums\ApplicationStatus;
+use App\Models\Company;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
+
+class OverviewTest extends TestCase
+{
+    use RefreshDatabase;
+
+    public function test_overview_lists_sent_companies_and_the_interview_headline(): void
+    {
+        Company::factory()->withStatus(ApplicationStatus::Interview)->create(['name' => 'TurTel']);
+        Company::factory()->withStatus(ApplicationStatus::Sent)->create(['name' => 'CODIUM']);
+        Company::factory()->create(['name' => 'Koncept s.r.o.']);
+
+        $this->get(route('overview'))
+            ->assertOk()
+            ->assertSee('V TurTel ťa čaká', false)
+            ->assertSee('CODIUM')
+            ->assertSee('Koncept s.r.o.');
+    }
+
+    public function test_unsent_companies_are_only_offered_as_drafts(): void
+    {
+        Company::factory()->create(['name' => 'Koncept s.r.o.']);
+
+        $this->get(route('overview'))
+            ->assertOk()
+            ->assertSeeInOrder(['Pripravené na odoslanie', 'Koncept s.r.o.'])
+            ->assertSee('Zatiaľ si neoslovil žiadnu firmu.');
+    }
+
+    public function test_overview_can_be_filtered_by_status(): void
+    {
+        Company::factory()->withStatus(ApplicationStatus::Rejected)->create(['name' => 'Hyperia']);
+        Company::factory()->withStatus(ApplicationStatus::Sent)->create(['name' => 'CODIUM']);
+
+        $this->get(route('overview', ['stav' => 'zamietnute']))
+            ->assertOk()
+            ->assertSee('Hyperia')
+            ->assertDontSee('CODIUM');
+    }
+
+    public function test_overview_can_be_searched_by_company_name(): void
+    {
+        Company::factory()->withStatus(ApplicationStatus::Rejected)->create(['name' => 'Hyperia']);
+        Company::factory()->withStatus(ApplicationStatus::Sent)->create(['name' => 'CODIUM']);
+
+        $this->get(route('overview', ['q' => 'codi']))
+            ->assertOk()
+            ->assertSee('CODIUM')
+            ->assertDontSee('Hyperia');
+    }
+
+    public function test_overview_ignores_an_unknown_status(): void
+    {
+        Company::factory()->withStatus(ApplicationStatus::Sent)->create(['name' => 'CODIUM']);
+
+        $this->get(route('overview', ['stav' => 'neexistuje']))
+            ->assertOk()
+            ->assertSee('CODIUM');
+    }
+
+    public function test_overview_explains_when_nothing_matches(): void
+    {
+        $this->get(route('overview', ['q' => 'zzz']))
+            ->assertOk()
+            ->assertSee('Žiadna firma nezodpovedá filtru.');
+    }
+
+    public function test_overview_summarises_the_counts_from_the_database(): void
+    {
+        Company::factory()->count(3)->withStatus(ApplicationStatus::Sent)->create();
+        Company::factory()->withStatus(ApplicationStatus::Reply)->create();
+        Company::factory()->withStatus(ApplicationStatus::Rejected)->create();
+
+        $this->get(route('overview'))
+            ->assertOk()
+            ->assertSee('Odpoveď prišla od 40 % oslovených firiem.', false);
+    }
+
+    public function test_later_topics_are_grouped_with_a_company_count(): void
+    {
+        Company::factory()->count(2)->create(['future' => 'Node.js']);
+        Company::factory()->create(['future' => 'Java']);
+
+        $this->get(route('overview'))
+            ->assertOk()
+            ->assertSee('Node.js · 2 firmy')
+            ->assertSee('Java · 1 firma');
+    }
+}
