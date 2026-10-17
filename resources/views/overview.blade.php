@@ -85,13 +85,17 @@
                                 @csrf
                                 @method('PATCH')
 
+                                @if ($company->focus)
+                                    <p class="text-sm text-subtle">{{ $company->focus }}</p>
+                                @endif
+
                                 @if ($isOpen && $errors->any())
                                     <p class="text-sm text-rejected" role="alert">{{ $errors->first() }}</p>
                                 @endif
 
                                 <fieldset class="flex flex-wrap gap-2">
                                     <legend class="sr-only">Stav</legend>
-                                    @foreach (ApplicationStatus::tracked() as $option)
+                                    @foreach ($statuses as $option)
                                         <label class="cursor-pointer">
                                             <input type="radio" name="status" value="{{ $option->value }}" class="peer sr-only" @checked($option === $company->status)>
                                             <span class="block rounded-full px-3.5 py-1.5 text-[13px] font-medium peer-focus-visible:ring-2 peer-focus-visible:ring-ink peer-focus-visible:ring-offset-2 {{ $option->softClass() }} {{ $option->checkedClass() }}">{{ $option->label() }}</span>

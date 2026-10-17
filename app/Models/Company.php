@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-#[Fillable(['name', 'status', 'sent_at', 'channel', 'position', 'web', 'future', 'note'])]
+#[Fillable(['name', 'status', 'sent_at', 'channel', 'position', 'web', 'future', 'note', 'focus'])]
 class Company extends Model
 {
     /** @use HasFactory<CompanyFactory> */
@@ -38,8 +38,16 @@ class Company extends Model
     protected function summaryLine(): Attribute
     {
         return Attribute::get(function (): string {
-            if ($this->sent_at === null) {
+            if ($this->status === ApplicationStatus::Unsuitable) {
+                return 'Nevhodné';
+            }
+
+            if ($this->status === ApplicationStatus::Unsent) {
                 return 'Zatiaľ neposlané';
+            }
+
+            if ($this->sent_at === null) {
+                return 'Poslané, dátum neuvedený';
             }
 
             $sentence = 'Poslané '.$this->sent_at->format('j. n.');
@@ -55,7 +63,7 @@ class Company extends Model
     #[Scope]
     protected function sentOut(Builder $query): Builder
     {
-        return $query->where('status', '!=', ApplicationStatus::Unsent);
+        return $query->whereNotIn('status', [ApplicationStatus::Unsent, ApplicationStatus::Unsuitable]);
     }
 
     /**

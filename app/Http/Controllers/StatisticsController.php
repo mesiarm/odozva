@@ -20,7 +20,7 @@ class StatisticsController extends Controller
             ->mapWithKeys(fn (ApplicationStatus $status): array => [$status->value => (int) ($counts[$status->value] ?? 0)]);
 
         $total = $byStatus->sum();
-        $sent = $total - $byStatus[ApplicationStatus::Unsent->value];
+        $sent = $byStatus->only(collect(ApplicationStatus::cases())->filter->hasBeenSent()->map->value->all())->sum();
         $replied = $sent - $byStatus[ApplicationStatus::Sent->value];
         $interviews = $byStatus[ApplicationStatus::Interview->value];
 
