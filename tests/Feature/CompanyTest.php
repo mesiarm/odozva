@@ -56,6 +56,33 @@ class CompanyTest extends TestCase
         $this->assertDatabaseCount('companies', 0);
     }
 
+    public function test_the_reason_can_be_saved_and_is_shown_in_the_list(): void
+    {
+        $company = Company::factory()->withStatus(ApplicationStatus::Sent)->create(['name' => 'Hyperia', 'channel' => 'Profesia']);
+
+        $this->patch(route('companies.update', $company), [
+            'status' => 'zamietnute',
+            'reason' => 'Hľadajú seniora',
+            'note' => 'Odpísali e-mailom.',
+        ])->assertSessionDoesntHaveErrors();
+
+        $this->assertSame('Hľadajú seniora', $company->fresh()->reason);
+        $this->assertSame('Odpísali e-mailom.', $company->fresh()->note);
+
+        $this->get(route('overview'))->assertOk()->assertSee('Hľadajú seniora');
+    }
+
+    public function test_an_unsuitable_company_can_be_created_with_a_reason(): void
+    {
+        $this->post(route('companies.store'), ['name' => 'Hardvér', 'status' => 'nevhodne', 'reason' => 'HW + linux']);
+
+        $company = Company::firstWhere('name', 'Hardvér');
+
+        $this->assertSame(ApplicationStatus::Unsuitable, $company->status);
+        $this->assertSame('HW + linux', $company->reason);
+        $this->assertSame('Nevhodné: HW + linux', $company->summary_line);
+    }
+
     public function test_a_rejection_can_be_recorded_with_the_date_the_application_was_sent(): void
     {
         $company = Company::factory()->create(['name' => 'Hyperia']);

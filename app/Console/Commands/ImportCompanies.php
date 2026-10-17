@@ -132,13 +132,19 @@ class ImportCompanies extends Command
             'sent_at' => $status->hasBeenSent() ? $this->sentDate($activity, $year) : null,
             'channel' => $status->hasBeenSent() ? $this->channel($activity) : null,
             'web' => $this->host($cell('web')),
+            'reason' => $this->reasonFor($status, $activity, $unsuitable),
             'focus' => $cell('focus') ?: $cell('summary') ?: null,
-            'note' => collect([
-                $activity,
-                $cell('note'),
-                $unsuitable !== '' ? 'Nevhodné: '.$unsuitable : '',
-            ])->filter()->implode("\n") ?: null,
+            'note' => collect([$activity, $cell('note')])->filter()->implode("\n") ?: null,
         ];
+    }
+
+    private function reasonFor(ApplicationStatus $status, string $activity, string $unsuitable): ?string
+    {
+        return match ($status) {
+            ApplicationStatus::Unsuitable => $unsuitable !== '' ? $unsuitable : null,
+            ApplicationStatus::Rejected => preg_match('/neprijali ma:\s*(.+)$/u', $activity, $matches) ? trim($matches[1]) : null,
+            default => null,
+        };
     }
 
     private function statusFor(string $activity, string $unsuitable): ApplicationStatus

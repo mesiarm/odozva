@@ -28,6 +28,7 @@ class ImportCompaniesTest extends TestCase
             [5, 'KROS', '', '', '', 'Poslané skôr – zamietnuté', '', ''],
             [6, 'eSYST', '', '', '', 'Poslané 14. 10. (e-mail)', '', ''],
             [7, 'Hardvér s.r.o.', '', '', '', '', 'HW + linux', ''],
+            [10, 'Odmietla', '', '', '', 'Zamietnuté – neprijali ma: chcú aj frontendistu', '', ''],
             [9, 'Preverovaná', '', '', '', 'Poslané 27. 9., prebehla komunikácia; 9. 10. formálna prihláška – preverujú ju', '', ''],
             [8, '', '', '', '', '', '', ''],
         ];
@@ -53,7 +54,7 @@ class ImportCompaniesTest extends TestCase
     {
         $this->artisan('companies:import', ['path' => $this->path, '--year' => 2026])->assertSuccessful();
 
-        $this->assertDatabaseCount('companies', 8);
+        $this->assertDatabaseCount('companies', 9);
 
         $new = Company::firstWhere('name', 'Nová firma');
         $this->assertSame(ApplicationStatus::Unsent, $new->status);
@@ -82,6 +83,17 @@ class ImportCompaniesTest extends TestCase
         $this->assertNull($kros->sent_at);
     }
 
+    public function test_a_rejection_reason_is_stored_separately_from_the_note(): void
+    {
+        $this->artisan('companies:import', ['path' => $this->path]);
+
+        $rejected = Company::firstWhere('name', 'Odmietla');
+
+        $this->assertSame(ApplicationStatus::Rejected, $rejected->status);
+        $this->assertSame('chcú aj frontendistu', $rejected->reason);
+        $this->assertNull(Company::firstWhere('name', 'KROS')->reason);
+    }
+
     public function test_unsuitable_companies_keep_their_reason_and_are_not_counted_as_sent(): void
     {
         $this->artisan('companies:import', ['path' => $this->path]);
@@ -90,7 +102,8 @@ class ImportCompaniesTest extends TestCase
 
         $this->assertSame(ApplicationStatus::Unsuitable, $hardware->status);
         $this->assertNull($hardware->sent_at);
-        $this->assertSame('Nevhodné: HW + linux', $hardware->note);
+        $this->assertSame('HW + linux', $hardware->reason);
+        $this->assertNull($hardware->note);
     }
 
     public function test_existing_companies_are_not_overwritten(): void

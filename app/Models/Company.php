@@ -10,8 +10,9 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
-#[Fillable(['name', 'status', 'sent_at', 'channel', 'position', 'web', 'future', 'note', 'focus'])]
+#[Fillable(['name', 'status', 'sent_at', 'channel', 'position', 'web', 'future', 'reason', 'note', 'focus'])]
 class Company extends Model
 {
     /** @use HasFactory<CompanyFactory> */
@@ -39,20 +40,18 @@ class Company extends Model
     {
         return Attribute::get(function (): string {
             if ($this->status === ApplicationStatus::Unsuitable) {
-                return 'Nevhodné';
+                return $this->reason ? 'Nevhodné: '.Str::limit($this->reason, 80) : 'Nevhodné';
             }
 
             if ($this->status === ApplicationStatus::Unsent) {
                 return 'Zatiaľ neposlané';
             }
 
-            if ($this->sent_at === null) {
-                return 'Poslané, dátum neuvedený';
-            }
-
-            $sentence = 'Poslané '.$this->sent_at->format('j. n.');
-
-            return $this->channel ? $sentence.' · '.$this->channel : $sentence;
+            return collect([
+                $this->sent_at ? 'Poslané '.$this->sent_at->format('j. n.') : 'Poslané, dátum neuvedený',
+                $this->channel,
+                $this->status === ApplicationStatus::Rejected && $this->reason ? Str::limit($this->reason, 80) : null,
+            ])->filter()->implode(' · ');
         });
     }
 

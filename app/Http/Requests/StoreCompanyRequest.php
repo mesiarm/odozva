@@ -21,6 +21,7 @@ class StoreCompanyRequest extends FormRequest
             'position' => ['nullable', 'string', 'max:255'],
             'web' => ['nullable', 'string', 'max:255'],
             'future' => ['nullable', 'string', 'max:255'],
+            'reason' => ['nullable', 'string', 'max:1000'],
             'note' => ['nullable', 'string', 'max:5000'],
         ];
     }
