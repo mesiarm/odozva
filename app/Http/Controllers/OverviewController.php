@@ -81,7 +81,7 @@ class OverviewController extends Controller
 
         return [
             'sent' => $sent,
-            'replies' => $countOf(ApplicationStatus::Reply, ApplicationStatus::Interview),
+            'replies' => $answered,
             'interviews' => $countOf(ApplicationStatus::Interview),
             'replyRate' => $sent > 0 ? (int) round($answered / $sent * 100) : 0,
             'rejected' => $countOf(ApplicationStatus::Rejected),

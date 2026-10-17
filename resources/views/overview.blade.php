@@ -23,7 +23,7 @@
                     @endif
                 </h1>
                 <p class="mb-9 max-w-140 text-[17px] text-subtle">
-                    Ostatné správy sú vonku a na jednu už niekto odpovedal. Zvyšok si môžeš vybaviť v pokoji.
+                    Prehľad toho, čo si poslal a kto sa ti už ozval. Zvyšok si môžeš vybaviť v pokoji.
                 </p>
 
                 <dl class="mb-3 flex max-w-155 items-start">
@@ -34,7 +34,7 @@
                     <div class="mx-2 mt-5 h-px min-w-3 flex-1 bg-rule sm:mx-3"></div>
                     <div class="flex min-w-20 flex-col gap-0.5 sm:min-w-27">
                         <dd class="order-1 font-display text-4xl leading-none sm:text-[40px]">{{ $summary['replies'] }}</dd>
-                        <dt class="order-2 text-[13px] text-muted">odpoveď</dt>
+                        <dt class="order-2 text-[13px] text-muted">{{ $summary['replies'] === 1 ? 'odpoveď' : 'odpovedí' }}</dt>
                     </div>
                     <div class="mx-2 mt-5 h-px min-w-3 flex-1 bg-rule sm:mx-3"></div>
                     <div class="flex min-w-20 flex-col gap-0.5 sm:min-w-27">
@@ -46,6 +46,7 @@
                     Odpoveď prišla od {{ $summary['replyRate'] }} % oslovených firiem. Tentoraz to nevyšlo u {{ $summary['rejected'] }} firiem, {{ $summary['unsent'] }} o tebe ešte nevie.
                 </p>
 
+                <div id="company-results">
                 <div class="mb-2 flex flex-wrap items-baseline gap-x-5 gap-y-2">
                     <h2 class="mr-2 font-display text-[26px] font-normal">Tvoje firmy</h2>
                     @foreach ($filters as $filter)
@@ -131,6 +132,7 @@
                             {{ $activeStatus || $search !== '' ? 'Žiadna firma nezodpovedá filtru.' : 'Zatiaľ tu nie je žiadna firma. Pridaj prvú tlačidlom hore.' }}
                         </p>
                     @endforelse
+                </div>
                 </div>
             </div>
 

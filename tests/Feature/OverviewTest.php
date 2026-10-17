@@ -66,6 +66,18 @@ class OverviewTest extends TestCase
         }
     }
 
+    public function test_rejections_count_as_replies_in_the_summary(): void
+    {
+        Company::factory()->count(2)->withStatus(ApplicationStatus::Sent)->create();
+        Company::factory()->count(3)->withStatus(ApplicationStatus::Rejected)->create();
+        Company::factory()->withStatus(ApplicationStatus::Reply)->create();
+
+        $html = $this->get(route('overview'))->assertOk()->getContent();
+
+        $this->assertMatchesRegularExpression('/>4<\/dd>\s*<dt[^>]*>odpovedí<\/dt>/u', $html);
+        $this->assertMatchesRegularExpression('/>6<\/dd>\s*<dt[^>]*>poslaných<\/dt>/u', $html);
+    }
+
     public function test_the_waiting_filter_only_appears_once_a_company_is_waiting(): void
     {
         $this->get(route('overview'))->assertOk()->assertDontSee('Čaká sa');
