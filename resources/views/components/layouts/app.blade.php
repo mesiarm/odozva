@@ -33,5 +33,9 @@
         </header>
 
         {{ $slot }}
+
+        @if (session('status'))
+            <div role="status" data-toast class="fixed bottom-6 left-1/2 -translate-x-1/2 rounded-full bg-ink px-5 py-2.5 text-sm font-medium text-paper shadow-lg">{{ session('status') }}</div>
+        @endif
     </body>
 </html>

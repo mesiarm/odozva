@@ -24,7 +24,9 @@ class CompanyController extends Controller
 
         return redirect()
             ->route('overview')
-            ->with('opened', $company->id);
+            ->withFragment('company-'.$company->id)
+            ->with('opened', $company->id)
+            ->with('status', 'Firma bola pridaná.');
     }
 
     public function update(UpdateCompanyRequest $request, Company $company): RedirectResponse
@@ -33,7 +35,9 @@ class CompanyController extends Controller
 
         return redirect()
             ->back(fallback: route('overview'))
-            ->with('opened', $company->id);
+            ->withFragment('company-'.$company->id)
+            ->with('opened', $company->id)
+            ->with('status', 'Uložené.');
     }
 
     /**

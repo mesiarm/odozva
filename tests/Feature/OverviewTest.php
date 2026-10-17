@@ -78,6 +78,18 @@ class OverviewTest extends TestCase
         $this->assertMatchesRegularExpression('/>6<\/dd>\s*<dt[^>]*>poslaných<\/dt>/u', $html);
     }
 
+    public function test_a_saved_change_is_confirmed_and_the_row_can_be_found_again(): void
+    {
+        $company = Company::factory()->withStatus(ApplicationStatus::Sent)->create(['web' => 'codium.sk']);
+
+        $this->withSession(['status' => 'Uložené.'])
+            ->get(route('overview'))
+            ->assertOk()
+            ->assertSee('Uložené.')
+            ->assertSee('id="company-'.$company->id.'"', false)
+            ->assertSee('codium.sk');
+    }
+
     public function test_the_waiting_filter_only_appears_once_a_company_is_waiting(): void
     {
         $this->get(route('overview'))->assertOk()->assertDontSee('Čaká sa');

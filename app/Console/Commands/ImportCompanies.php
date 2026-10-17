@@ -147,6 +147,7 @@ class ImportCompanies extends Command
             $activity === '' && $unsuitable !== '' => ApplicationStatus::Unsuitable,
             $activity === '' => ApplicationStatus::Unsent,
             Str::contains($activity, 'zamietnut', ignoreCase: true) => ApplicationStatus::Rejected,
+            Str::contains($activity, ['preverujú', 'čaká sa', 'čakám'], ignoreCase: true) => ApplicationStatus::Waiting,
             Str::contains($activity, 'prebehla komunikácia', ignoreCase: true) => ApplicationStatus::Reply,
             default => ApplicationStatus::Sent,
         };

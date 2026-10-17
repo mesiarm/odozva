@@ -66,7 +66,7 @@
                 <div class="border-b border-line">
                     @forelse ($companies as $company)
                         @php($isOpen = session()->has('opened') ? session('opened') === $company->id : $loop->first)
-                        <details name="company" class="group border-t border-line" @if ($isOpen) open @endif>
+                        <details id="company-{{ $company->id }}" name="company" class="group scroll-mt-4 border-t border-line" @if ($isOpen) open @endif>
                             <summary class="grid cursor-pointer list-none grid-cols-[minmax(0,1fr)_auto_1.25rem] items-center gap-4 py-4 marker:hidden [&::-webkit-details-marker]:hidden">
                                 <span class="flex min-w-0 flex-col">
                                     <span class="text-[17px] font-medium">{{ $company->name }}</span>
@@ -81,6 +81,14 @@
                                     <span class="hidden group-open:inline">−</span>
                                 </span>
                             </summary>
+
+                            @if ($company->web)
+                                <form method="POST" action="{{ route('companies.web', $company) }}" class="mb-3 text-sm">
+                                    @csrf
+                                    <span class="text-muted">Web </span>
+                                    <button type="submit" class="text-accent underline hover:text-ink">{{ $company->web }}</button>
+                                </form>
+                            @endif
 
                             <form method="POST" action="{{ route('companies.update', $company) }}" class="flex max-w-150 flex-col gap-4.5 pb-6">
                                 @csrf
@@ -112,8 +120,7 @@
                                         <span class="text-muted">Pozícia</span>
                                         <input type="text" name="position" value="{{ $company->position }}" maxlength="255" class="h-8 w-56 rounded-lg bg-soft px-3 outline-none focus:ring-2 focus:ring-ink">
                                     </label>
-                                    <span><span class="text-muted">Web </span><span class="text-accent">{{ $company->web ?: '—' }}</span></span>
-                                    <label class="flex items-center gap-2">
+                                                                        <label class="flex items-center gap-2">
                                         <span class="text-muted">Do budúcna</span>
                                         <input type="text" name="future" value="{{ $company->future }}" maxlength="255" placeholder="napr. Node.js" class="h-8 w-40 rounded-lg bg-soft px-3 outline-none placeholder:text-muted focus:ring-2 focus:ring-ink">
                                     </label>

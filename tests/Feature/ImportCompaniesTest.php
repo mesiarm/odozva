@@ -28,6 +28,7 @@ class ImportCompaniesTest extends TestCase
             [5, 'KROS', '', '', '', 'Poslané skôr – zamietnuté', '', ''],
             [6, 'eSYST', '', '', '', 'Poslané 14. 10. (e-mail)', '', ''],
             [7, 'Hardvér s.r.o.', '', '', '', '', 'HW + linux', ''],
+            [9, 'Preverovaná', '', '', '', 'Poslané 27. 9., prebehla komunikácia; 9. 10. formálna prihláška – preverujú ju', '', ''],
             [8, '', '', '', '', '', '', ''],
         ];
 
@@ -52,7 +53,7 @@ class ImportCompaniesTest extends TestCase
     {
         $this->artisan('companies:import', ['path' => $this->path, '--year' => 2026])->assertSuccessful();
 
-        $this->assertDatabaseCount('companies', 7);
+        $this->assertDatabaseCount('companies', 8);
 
         $new = Company::firstWhere('name', 'Nová firma');
         $this->assertSame(ApplicationStatus::Unsent, $new->status);
@@ -73,6 +74,7 @@ class ImportCompaniesTest extends TestCase
         $this->assertSame(ApplicationStatus::Rejected, Company::firstWhere('name', 'Hyperia')->status);
         $this->assertSame('2026-09-03', Company::firstWhere('name', 'Hyperia')->sent_at->toDateString());
         $this->assertSame(ApplicationStatus::Reply, Company::firstWhere('name', 'Descartes')->status);
+        $this->assertSame(ApplicationStatus::Waiting, Company::firstWhere('name', 'Preverovaná')->status);
         $this->assertSame('Email', Company::firstWhere('name', 'eSYST')->channel);
 
         $kros = Company::firstWhere('name', 'KROS');

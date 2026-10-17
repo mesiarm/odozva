@@ -17,6 +17,8 @@ class MarkCompanySentController extends Controller
             ]);
         }
 
-        return redirect()->back(fallback: route('overview'));
+        return redirect()
+            ->back(fallback: route('overview'))
+            ->with('status', 'Označené ako poslané.');
     }
 }

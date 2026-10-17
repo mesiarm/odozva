@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Enums\ApplicationStatus;
 use App\Models\Company;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Native\Desktop\Facades\Shell;
 use Tests\TestCase;
 
 class CompanyTest extends TestCase
@@ -21,7 +22,8 @@ class CompanyTest extends TestCase
     public function test_a_company_can_be_created_with_only_a_name(): void
     {
         $this->post(route('companies.store'), ['name' => 'TurTel', 'status' => 'neposlane'])
-            ->assertRedirect(route('overview'));
+            ->assertRedirectContains(route('overview'))
+            ->assertSessionHas('status', 'Firma bola pridaná.');
 
         $company = Company::firstWhere('name', 'TurTel');
 
@@ -76,7 +78,7 @@ class CompanyTest extends TestCase
             'name' => 'Hyperia',
             'status' => 'zamietnute',
             'sent_at' => '2026-09-03',
-        ])->assertRedirect(route('overview'));
+        ])->assertRedirectContains(route('overview'));
 
         $company = Company::firstWhere('name', 'Hyperia');
 
@@ -110,8 +112,9 @@ class CompanyTest extends TestCase
             'status' => 'pohovor',
             'position' => 'PHP developer',
             'note' => 'Volali v utorok.',
-        ])->assertRedirect(route('overview'))
-            ->assertSessionHas('opened', $company->id);
+        ])->assertRedirect(route('overview').'#company-'.$company->id)
+            ->assertSessionHas('opened', $company->id)
+            ->assertSessionHas('status', 'Uložené.');
 
         $this->assertDatabaseHas('companies', [
             'id' => $company->id,
@@ -146,7 +149,9 @@ class CompanyTest extends TestCase
         $this->travelTo('2026-10-17');
         $company = Company::factory()->create();
 
-        $this->post(route('companies.sent', $company))->assertRedirect(route('overview'));
+        $this->post(route('companies.sent', $company))
+            ->assertRedirect(route('overview'))
+            ->assertSessionHas('status', 'Označené ako poslané.');
 
         $company->refresh();
 
@@ -161,5 +166,29 @@ class CompanyTest extends TestCase
         $this->post(route('companies.sent', $company));
 
         $this->assertSame(ApplicationStatus::Reply, $company->fresh()->status);
+    }
+
+    public function test_the_company_web_opens_in_the_browser_outside_the_native_app(): void
+    {
+        $company = Company::factory()->create(['web' => 'codium.sk']);
+
+        $this->post(route('companies.web', $company))->assertRedirect('https://codium.sk');
+    }
+
+    public function test_the_company_web_opens_through_the_native_shell_inside_the_app(): void
+    {
+        config(['nativephp-internal.running' => true]);
+        Shell::shouldReceive('openExternal')->once()->with('https://codium.sk');
+
+        $company = Company::factory()->create(['web' => 'codium.sk']);
+
+        $this->post(route('companies.web', $company))->assertNoContent();
+    }
+
+    public function test_a_company_without_a_web_cannot_be_opened(): void
+    {
+        $company = Company::factory()->create(['web' => null]);
+
+        $this->post(route('companies.web', $company))->assertNotFound();
     }
 }
