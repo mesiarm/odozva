@@ -44,7 +44,7 @@ class CompanyController extends Controller
      */
     private function withSentDate(array $data, ?Company $company = null): array
     {
-        if ($company?->sent_at === null && ApplicationStatus::from($data['status'])->hasBeenSent()) {
+        if (($data['sent_at'] ?? null) === null && $company?->sent_at === null && ApplicationStatus::from($data['status'])->hasBeenSent()) {
             $data['sent_at'] = today();
         }
 

@@ -1,11 +1,11 @@
 @use('App\Enums\ApplicationStatus')
 <x-layouts.app title="Odozva">
         <x-slot:actions>
-            <form method="GET" action="{{ route('overview') }}" role="search">
+            <form method="GET" action="{{ route('overview') }}" role="search" class="w-full sm:w-auto">
                 @if ($activeStatus)
                     <input type="hidden" name="stav" value="{{ $activeStatus->value }}">
                 @endif
-                <label class="flex h-10 w-56 items-center gap-2 rounded-full bg-soft px-4 focus-within:ring-2 focus-within:ring-ink">
+                <label class="flex h-10 w-full items-center gap-2 sm:w-56 rounded-full bg-soft px-4 focus-within:ring-2 focus-within:ring-ink">
                     <svg class="size-4 shrink-0 text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
                     <span class="sr-only">Nájsť firmu</span>
                     <input type="search" name="q" value="{{ $search }}" placeholder="Nájsť firmu" class="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted">
@@ -13,9 +13,9 @@
             </form>
         </x-slot:actions>
 
-        <main class="grid grid-cols-1 items-start gap-x-22 gap-y-12 px-8 pt-3 pb-14 lg:grid-cols-[minmax(0,1fr)_20rem] lg:px-18">
+        <main class="grid grid-cols-1 items-start gap-x-22 gap-y-12 px-4 pt-3 pb-14 sm:px-8 lg:grid-cols-[minmax(0,1fr)_20rem] lg:px-18">
             <div class="min-w-0">
-                <h1 class="mt-4 mb-2 max-w-160 font-display text-[44px] leading-[1.15] font-normal tracking-tight">
+                <h1 class="mt-4 mb-2 max-w-160 font-display text-4xl leading-[1.15] sm:text-[44px] font-normal tracking-tight">
                     @if ($interviewCompany)
                         V {{ $interviewCompany->name }} ťa čaká <span class="text-highlight">pohovor</span>.
                     @else
@@ -27,18 +27,18 @@
                 </p>
 
                 <dl class="mb-3 flex max-w-155 items-start">
-                    <div class="flex min-w-27 flex-col gap-0.5">
-                        <dd class="order-1 font-display text-[40px] leading-none">{{ $summary['sent'] }}</dd>
+                    <div class="flex min-w-20 flex-col gap-0.5 sm:min-w-27">
+                        <dd class="order-1 font-display text-4xl leading-none sm:text-[40px]">{{ $summary['sent'] }}</dd>
                         <dt class="order-2 text-[13px] text-muted">poslaných</dt>
                     </div>
-                    <div class="mx-3 mt-5 h-px flex-1 bg-rule"></div>
-                    <div class="flex min-w-27 flex-col gap-0.5">
-                        <dd class="order-1 font-display text-[40px] leading-none">{{ $summary['replies'] }}</dd>
+                    <div class="mx-2 mt-5 h-px min-w-3 flex-1 bg-rule sm:mx-3"></div>
+                    <div class="flex min-w-20 flex-col gap-0.5 sm:min-w-27">
+                        <dd class="order-1 font-display text-4xl leading-none sm:text-[40px]">{{ $summary['replies'] }}</dd>
                         <dt class="order-2 text-[13px] text-muted">odpoveď</dt>
                     </div>
-                    <div class="mx-3 mt-5 h-px flex-1 bg-rule"></div>
-                    <div class="flex min-w-27 flex-col gap-0.5">
-                        <dd class="order-1 font-display text-[40px] leading-none text-highlight">{{ $summary['interviews'] }}</dd>
+                    <div class="mx-2 mt-5 h-px min-w-3 flex-1 bg-rule sm:mx-3"></div>
+                    <div class="flex min-w-20 flex-col gap-0.5 sm:min-w-27">
+                        <dd class="order-1 font-display text-4xl leading-none sm:text-[40px] text-highlight">{{ $summary['interviews'] }}</dd>
                         <dt class="order-2 text-[13px] text-muted">pohovor</dt>
                     </div>
                 </dl>
@@ -46,7 +46,7 @@
                     Odpoveď prišla od {{ $summary['replyRate'] }} % oslovených firiem. Tentoraz to nevyšlo u {{ $summary['rejected'] }} firiem, {{ $summary['unsent'] }} o tebe ešte nevie.
                 </p>
 
-                <div class="mb-2 flex flex-wrap items-baseline gap-5">
+                <div class="mb-2 flex flex-wrap items-baseline gap-x-5 gap-y-2">
                     <h2 class="mr-2 font-display text-[26px] font-normal">Tvoje firmy</h2>
                     @foreach ($filters as $filter)
                         @php($isActive = $filter === $activeStatus)
@@ -104,6 +104,10 @@
                                 </fieldset>
                                 <div class="flex flex-wrap items-center gap-x-8 gap-y-2 text-sm">
                                     <label class="flex items-center gap-2">
+                                        <span class="text-muted">Odoslané</span>
+                                        <input type="date" name="sent_at" value="{{ $company->sent_at?->toDateString() }}" max="{{ today()->toDateString() }}" class="h-8 rounded-lg bg-soft px-3 outline-none focus:ring-2 focus:ring-ink">
+                                    </label>
+                                    <label class="flex items-center gap-2">
                                         <span class="text-muted">Pozícia</span>
                                         <input type="text" name="position" value="{{ $company->position }}" maxlength="255" class="h-8 w-56 rounded-lg bg-soft px-3 outline-none focus:ring-2 focus:ring-ink">
                                     </label>
@@ -124,7 +128,7 @@
                         </details>
                     @empty
                         <p class="border-t border-line py-8 text-muted">
-                            {{ $activeStatus || $search !== '' ? 'Žiadna firma nezodpovedá filtru.' : 'Zatiaľ si neoslovil žiadnu firmu.' }}
+                            {{ $activeStatus || $search !== '' ? 'Žiadna firma nezodpovedá filtru.' : 'Zatiaľ tu nie je žiadna firma. Pridaj prvú tlačidlom hore.' }}
                         </p>
                     @endforelse
                 </div>

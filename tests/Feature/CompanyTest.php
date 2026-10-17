@@ -54,6 +54,54 @@ class CompanyTest extends TestCase
         $this->assertDatabaseCount('companies', 0);
     }
 
+    public function test_a_rejection_can_be_recorded_with_the_date_the_application_was_sent(): void
+    {
+        $company = Company::factory()->create(['name' => 'Hyperia']);
+
+        $this->patch(route('companies.update', $company), [
+            'status' => 'zamietnute',
+            'sent_at' => '2026-09-03',
+            'note' => 'Zamietnuté e-mailom.',
+        ])->assertSessionDoesntHaveErrors();
+
+        $company->refresh();
+
+        $this->assertSame(ApplicationStatus::Rejected, $company->status);
+        $this->assertSame('2026-09-03', $company->sent_at->toDateString());
+    }
+
+    public function test_a_company_can_be_created_straight_as_rejected_with_a_sent_date(): void
+    {
+        $this->post(route('companies.store'), [
+            'name' => 'Hyperia',
+            'status' => 'zamietnute',
+            'sent_at' => '2026-09-03',
+        ])->assertRedirect(route('overview'));
+
+        $company = Company::firstWhere('name', 'Hyperia');
+
+        $this->assertSame(ApplicationStatus::Rejected, $company->status);
+        $this->assertSame('2026-09-03', $company->sent_at->toDateString());
+    }
+
+    public function test_the_sent_date_cannot_be_in_the_future(): void
+    {
+        $this->travelTo('2026-10-17');
+        $company = Company::factory()->create();
+
+        $this->patch(route('companies.update', $company), ['status' => 'poslane', 'sent_at' => '2026-12-01'])
+            ->assertSessionHasErrors('sent_at');
+    }
+
+    public function test_clearing_the_sent_date_removes_it(): void
+    {
+        $company = Company::factory()->withStatus(ApplicationStatus::Sent)->create();
+
+        $this->patch(route('companies.update', $company), ['status' => 'poslane', 'sent_at' => '']);
+
+        $this->assertNull($company->fresh()->sent_at);
+    }
+
     public function test_a_company_can_be_updated(): void
     {
         $company = Company::factory()->withStatus(ApplicationStatus::Sent)->create();

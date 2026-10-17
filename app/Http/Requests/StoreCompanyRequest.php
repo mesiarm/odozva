@@ -17,6 +17,7 @@ class StoreCompanyRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'status' => ['required', Rule::enum(ApplicationStatus::class)],
             'channel' => ['nullable', 'string', 'max:255'],
+            'sent_at' => ['nullable', 'date', 'before_or_equal:today'],
             'position' => ['nullable', 'string', 'max:255'],
             'web' => ['nullable', 'string', 'max:255'],
             'future' => ['nullable', 'string', 'max:255'],

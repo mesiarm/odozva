@@ -1,8 +1,8 @@
 <x-layouts.app title="Pridať firmu · Odozva">
-    <main class="px-8 pt-3 pb-14 lg:px-18">
+    <main class="px-4 pt-3 pb-14 sm:px-8 lg:px-18">
         <a href="{{ route('overview') }}" class="text-sm text-muted hover:text-ink">← Späť na prehľad</a>
 
-        <h1 class="mt-4 mb-2 font-display text-[44px] leading-[1.15] font-normal tracking-tight">Nová firma</h1>
+        <h1 class="mt-4 mb-2 font-display text-4xl leading-[1.15] sm:text-[44px] font-normal tracking-tight">Nová firma</h1>
         <p class="mb-9 max-w-140 text-[17px] text-subtle">Stačí názov. Ostatné môžeš doplniť neskôr.</p>
 
         <form method="POST" action="{{ route('companies.store') }}" class="flex max-w-150 flex-col gap-6">
@@ -34,6 +34,10 @@
             </fieldset>
 
             <div class="grid gap-6 sm:grid-cols-2">
+                <label class="flex flex-col gap-1.5 text-[13px] text-muted">
+                    Dátum odoslania
+                    <input type="date" name="sent_at" value="{{ old('sent_at') }}" max="{{ today()->toDateString() }}" class="h-11 rounded-xl bg-soft px-4 text-[15px] text-ink outline-none focus:ring-2 focus:ring-ink">
+                </label>
                 <label class="flex flex-col gap-1.5 text-[13px] text-muted">
                     Pozícia
                     <input type="text" name="position" value="{{ old('position') }}" maxlength="255" class="h-11 rounded-xl bg-soft px-4 text-[15px] text-ink outline-none focus:ring-2 focus:ring-ink">

@@ -1,7 +1,7 @@
 <x-layouts.app title="Štatistiky · Odozva">
-    <main class="flex max-w-240 flex-col gap-12 px-8 pt-3 pb-14 lg:px-18">
+    <main class="flex max-w-240 flex-col gap-12 px-4 pt-3 pb-14 sm:px-8 lg:px-18">
         <div>
-            <h1 class="mt-4 mb-2 font-display text-[44px] leading-[1.15] font-normal tracking-tight">Štatistiky</h1>
+            <h1 class="mt-4 mb-2 font-display text-4xl leading-[1.15] sm:text-[44px] font-normal tracking-tight">Štatistiky</h1>
             <p class="max-w-140 text-[17px] text-subtle">Ako ti ide oslovovanie firiem. Stav k {{ now()->format('j. n. Y') }}.</p>
         </div>
 

@@ -18,11 +18,7 @@ class OverviewController extends Controller
         $search = $request->string('q')->trim()->toString();
 
         $companies = Company::query()
-            ->when(
-                $status,
-                fn ($query, ApplicationStatus $status) => $query->where('status', $status),
-                fn ($query) => $query->sentOut(),
-            )
+            ->when($status, fn ($query, ApplicationStatus $status) => $query->where('status', $status))
             ->when($search !== '', fn ($query) => $query->where('name', 'like', '%'.$search.'%'))
             ->byRelevance()
             ->get();
@@ -37,7 +33,7 @@ class OverviewController extends Controller
             'filters' => [null, ...array_filter(
                 ApplicationStatus::tracked(),
                 fn (ApplicationStatus $tracked): bool => $tracked !== ApplicationStatus::Waiting,
-            ), ApplicationStatus::Unsuitable],
+            ), ApplicationStatus::Unsent, ApplicationStatus::Unsuitable],
             'statuses' => ApplicationStatus::cases(),
             'summary' => $this->summary($unsentCount),
             'drafts' => Company::query()

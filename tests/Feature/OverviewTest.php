@@ -24,14 +24,40 @@ class OverviewTest extends TestCase
             ->assertSee('Koncept s.r.o.');
     }
 
-    public function test_unsent_companies_are_only_offered_as_drafts(): void
+    public function test_the_full_list_includes_unsent_and_unsuitable_companies(): void
     {
+        Company::factory()->withStatus(ApplicationStatus::Sent)->create(['name' => 'CODIUM']);
         Company::factory()->create(['name' => 'Koncept s.r.o.']);
+        Company::factory()->withStatus(ApplicationStatus::Unsuitable)->create(['name' => 'Hardvér s.r.o.']);
 
         $this->get(route('overview'))
             ->assertOk()
-            ->assertSeeInOrder(['Pripravené na odoslanie', 'Koncept s.r.o.'])
-            ->assertSee('Zatiaľ si neoslovil žiadnu firmu.');
+            ->assertSeeInOrder(['CODIUM', 'Koncept s.r.o.', 'Hardvér s.r.o.', 'Pripravené na odoslanie'])
+            ->assertDontSee('Zatiaľ tu nie je žiadna firma.');
+    }
+
+    public function test_unsent_and_unsuitable_companies_have_their_own_filters(): void
+    {
+        Company::factory()->withStatus(ApplicationStatus::Sent)->create(['name' => 'CODIUM']);
+        Company::factory()->create(['name' => 'Koncept s.r.o.']);
+        Company::factory()->withStatus(ApplicationStatus::Unsuitable)->create(['name' => 'Hardvér s.r.o.']);
+
+        $this->get(route('overview', ['stav' => 'nevhodne']))
+            ->assertOk()
+            ->assertSee('Hardvér s.r.o.')
+            ->assertDontSee('CODIUM');
+
+        $this->get(route('overview', ['stav' => 'neposlane']))
+            ->assertOk()
+            ->assertSee('Koncept s.r.o.')
+            ->assertDontSee('Hardvér s.r.o.');
+    }
+
+    public function test_overview_invites_you_to_add_a_company_when_there_are_none(): void
+    {
+        $this->get(route('overview'))
+            ->assertOk()
+            ->assertSee('Zatiaľ tu nie je žiadna firma.');
     }
 
     public function test_overview_can_be_filtered_by_status(): void

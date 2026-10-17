@@ -17,8 +17,8 @@ class NativeAppServiceProvider implements ProvidesPhpIni
             ->title('Odozva')
             ->width(1280)
             ->height(860)
-            ->minWidth(960)
-            ->minHeight(640)
+            ->minWidth(420)
+            ->minHeight(480)
             ->hideDevTools();
     }
 

@@ -1,6 +1,6 @@
 <x-layouts.app title="Do budúcna · Odozva">
-    <main class="max-w-200 px-8 pt-3 pb-14 lg:px-18">
-        <h1 class="mt-4 mb-2 font-display text-[44px] leading-[1.15] font-normal tracking-tight">Do budúcna</h1>
+    <main class="max-w-200 px-4 pt-3 pb-14 sm:px-8 lg:px-18">
+        <h1 class="mt-4 mb-2 font-display text-4xl leading-[1.15] sm:text-[44px] font-normal tracking-tight">Do budúcna</h1>
         <p class="mb-11 max-w-140 text-[17px] text-subtle">Firmy, ku ktorým sa vrátiš, keď sa naučíš niečo nové.</p>
 
         <div class="flex flex-col gap-10">
