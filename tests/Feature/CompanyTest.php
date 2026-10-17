@@ -195,6 +195,19 @@ class CompanyTest extends TestCase
         $this->assertSame(ApplicationStatus::Reply, $company->fresh()->status);
     }
 
+    public function test_a_company_can_be_moved_to_later_without_a_sent_date(): void
+    {
+        $company = Company::factory()->create();
+
+        $this->patch(route('companies.update', $company), ['status' => 'neskor', 'future' => 'Node.js', 'reason' => 'Chýba mi skúsenosť']);
+
+        $company->refresh();
+
+        $this->assertSame(ApplicationStatus::Later, $company->status);
+        $this->assertNull($company->sent_at);
+        $this->assertSame('Na neskôr: Node.js', $company->summary_line);
+    }
+
     public function test_the_company_web_opens_in_the_browser_outside_the_native_app(): void
     {
         $company = Company::factory()->create(['web' => 'codium.sk']);

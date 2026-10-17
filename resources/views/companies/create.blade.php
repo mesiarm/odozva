@@ -51,13 +51,13 @@
                     <input type="text" name="web" value="{{ old('web') }}" maxlength="255" placeholder="firma.sk" class="h-11 rounded-xl bg-soft px-4 text-[15px] text-ink outline-none placeholder:text-muted focus:ring-2 focus:ring-ink">
                 </label>
                 <label class="flex flex-col gap-1.5 text-[13px] text-muted">
-                    Do budúcna (čo sa naučiť)
+                    Čo sa naučiť
                     <input type="text" name="future" value="{{ old('future') }}" maxlength="255" placeholder="napr. Node.js" class="h-11 rounded-xl bg-soft px-4 text-[15px] text-ink outline-none placeholder:text-muted focus:ring-2 focus:ring-ink">
                 </label>
             </div>
 
-            <label class="hidden flex-col gap-1.5 text-[13px] text-muted group-has-[input[value=zamietnute]:checked]/form:flex group-has-[input[value=nevhodne]:checked]/form:flex">
-                Dôvod (prečo zamietnuté alebo nevhodné)
+            <label class="hidden flex-col gap-1.5 text-[13px] text-muted group-has-[input[value=zamietnute]:checked]/form:flex group-has-[input[value=nevhodne]:checked]/form:flex group-has-[input[value=neskor]:checked]/form:flex">
+                Dôvod (prečo zamietnuté, nevhodné alebo na neskôr)
                 <input type="text" name="reason" value="{{ old('reason') }}" maxlength="1000" placeholder="napr. chcú aj frontend, nerobia programovanie…" class="h-11 rounded-xl bg-soft px-4 text-[15px] text-ink outline-none placeholder:text-muted focus:ring-2 focus:ring-ink">
             </label>
 

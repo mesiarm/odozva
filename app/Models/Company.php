@@ -43,6 +43,10 @@ class Company extends Model
                 return $this->reason ? 'Nevhodné: '.Str::limit($this->reason, 80) : 'Nevhodné';
             }
 
+            if ($this->status === ApplicationStatus::Later) {
+                return $this->future ? 'Na neskôr: '.Str::limit($this->future, 80) : 'Na neskôr';
+            }
+
             if ($this->status === ApplicationStatus::Unsent) {
                 return 'Zatiaľ neposlané';
             }
@@ -62,7 +66,7 @@ class Company extends Model
     #[Scope]
     protected function sentOut(Builder $query): Builder
     {
-        return $query->whereNotIn('status', [ApplicationStatus::Unsent, ApplicationStatus::Unsuitable]);
+        return $query->whereIn('status', array_filter(ApplicationStatus::cases(), fn (ApplicationStatus $status): bool => $status->hasBeenSent()));
     }
 
     /**

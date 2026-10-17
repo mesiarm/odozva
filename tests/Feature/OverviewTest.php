@@ -90,6 +90,21 @@ class OverviewTest extends TestCase
             ->assertSee('codium.sk');
     }
 
+    public function test_companies_to_revisit_later_are_not_counted_as_sent(): void
+    {
+        Company::factory()->count(2)->withStatus(ApplicationStatus::Sent)->create();
+        Company::factory()->state(['status' => ApplicationStatus::Later, 'future' => 'Java', 'name' => 'SAMTECH'])->create();
+
+        $html = $this->get(route('overview'))->assertOk()->getContent();
+
+        $this->assertMatchesRegularExpression('/>2<\/dd>\s*<dt[^>]*>poslaných<\/dt>/u', $html);
+
+        $this->get(route('overview', ['stav' => 'neskor']))
+            ->assertOk()
+            ->assertSee('SAMTECH')
+            ->assertSee('Na neskôr: Java');
+    }
+
     public function test_the_waiting_filter_only_appears_once_a_company_is_waiting(): void
     {
         $this->get(route('overview'))->assertOk()->assertDontSee('Čaká sa');
@@ -157,12 +172,16 @@ class OverviewTest extends TestCase
 
     public function test_later_topics_are_grouped_with_a_company_count(): void
     {
-        Company::factory()->count(2)->create(['future' => 'Node.js']);
-        Company::factory()->create(['future' => 'Java']);
+        Company::factory()->count(2)->state(['status' => ApplicationStatus::Later, 'future' => 'Node.js'])->create();
+        Company::factory()->state(['status' => ApplicationStatus::Later, 'future' => 'Java'])->create();
+        Company::factory()->state(['status' => ApplicationStatus::Later])->create();
+        Company::factory()->create(['future' => 'Ignorované']);
 
         $this->get(route('overview'))
             ->assertOk()
             ->assertSee('Node.js · 2 firmy')
-            ->assertSee('Java · 1 firma');
+            ->assertSee('Java · 1 firma')
+            ->assertSee('Bez témy · 1 firma')
+            ->assertDontSee('Ignorované · 1 firma');
     }
 }

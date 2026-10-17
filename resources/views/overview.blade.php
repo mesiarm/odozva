@@ -121,12 +121,12 @@
                                         <input type="text" name="position" value="{{ $company->position }}" maxlength="255" class="h-8 w-56 rounded-lg bg-soft px-3 outline-none focus:ring-2 focus:ring-ink">
                                     </label>
                                                                         <label class="flex items-center gap-2">
-                                        <span class="text-muted">Do budúcna</span>
+                                        <span class="text-muted">Čo sa naučiť</span>
                                         <input type="text" name="future" value="{{ $company->future }}" maxlength="255" placeholder="napr. Node.js" class="h-8 w-40 rounded-lg bg-soft px-3 outline-none placeholder:text-muted focus:ring-2 focus:ring-ink">
                                     </label>
                                 </div>
-                                <label class="hidden flex-col gap-1.5 text-[13px] text-muted group-has-[input[value=zamietnute]:checked]/form:flex group-has-[input[value=nevhodne]:checked]/form:flex">
-                                    Dôvod (prečo zamietnuté alebo nevhodné)
+                                <label class="hidden flex-col gap-1.5 text-[13px] text-muted group-has-[input[value=zamietnute]:checked]/form:flex group-has-[input[value=nevhodne]:checked]/form:flex group-has-[input[value=neskor]:checked]/form:flex">
+                                    Dôvod (prečo zamietnuté, nevhodné alebo na neskôr)
                                     <input type="text" name="reason" value="{{ $company->reason }}" maxlength="1000" placeholder="napr. chcú aj frontend, nerobia programovanie…" class="h-9 rounded-xl bg-soft px-3.5 text-[15px] text-ink outline-none placeholder:text-muted focus:ring-2 focus:ring-ink">
                                 </label>
 

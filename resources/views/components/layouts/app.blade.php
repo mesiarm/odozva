@@ -17,7 +17,7 @@
             <div class="grow"></div>
             <a href="{{ route('companies.create') }}" class="sm:order-last inline-flex h-10 items-center rounded-full bg-ink px-5 text-sm font-medium whitespace-nowrap text-paper hover:bg-ink/90">+ Pridať firmu</a>
             <nav class="order-last flex w-full gap-6 overflow-x-auto sm:order-none sm:w-auto sm:gap-7" aria-label="Hlavná navigácia">
-                @foreach (['overview' => 'Prehľad', 'statistics' => 'Štatistiky', 'later' => 'Do budúcna'] as $route => $label)
+                @foreach (['overview' => 'Prehľad', 'statistics' => 'Štatistiky', 'later' => 'Na neskôr'] as $route => $label)
                     <a
                         href="{{ route($route) }}"
                         @if (request()->routeIs($route)) aria-current="page" @endif

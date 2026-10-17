@@ -11,6 +11,7 @@ enum ApplicationStatus: string
     case Waiting = 'caka-sa';
     case Rejected = 'zamietnute';
     case Unsuitable = 'nevhodne';
+    case Later = 'neskor';
 
     public function label(): string
     {
@@ -22,6 +23,7 @@ enum ApplicationStatus: string
             self::Waiting => 'Čaká sa',
             self::Rejected => 'Zamietnuté',
             self::Unsuitable => 'Nevhodné',
+            self::Later => 'Na neskôr',
         };
     }
 
@@ -35,6 +37,7 @@ enum ApplicationStatus: string
             self::Waiting => 'text-waiting',
             self::Rejected => 'text-rejected',
             self::Unsuitable => 'text-muted',
+            self::Later => 'text-later',
         };
     }
 
@@ -48,6 +51,7 @@ enum ApplicationStatus: string
             self::Waiting => 'bg-waiting',
             self::Rejected => 'bg-rejected',
             self::Unsuitable => 'bg-muted',
+            self::Later => 'bg-later',
         };
     }
 
@@ -61,6 +65,7 @@ enum ApplicationStatus: string
             self::Waiting => 'bg-waiting-soft text-waiting',
             self::Rejected => 'bg-rejected-soft text-rejected',
             self::Unsuitable => 'bg-soft text-muted',
+            self::Later => 'bg-later-soft text-later',
         };
     }
 
@@ -74,6 +79,7 @@ enum ApplicationStatus: string
             self::Waiting => 'bg-waiting text-white',
             self::Rejected => 'bg-rejected text-white',
             self::Unsuitable => 'bg-muted text-white',
+            self::Later => 'bg-later text-white',
         };
     }
 
@@ -87,6 +93,7 @@ enum ApplicationStatus: string
             self::Waiting => 'peer-checked:bg-waiting peer-checked:text-white',
             self::Rejected => 'peer-checked:bg-rejected peer-checked:text-white',
             self::Unsuitable => 'peer-checked:bg-muted peer-checked:text-white',
+            self::Later => 'peer-checked:bg-later peer-checked:text-white',
         };
     }
 
@@ -95,7 +102,7 @@ enum ApplicationStatus: string
      */
     public function hasBeenSent(): bool
     {
-        return $this !== self::Unsent && $this !== self::Unsuitable;
+        return ! in_array($this, [self::Unsent, self::Unsuitable, self::Later], true);
     }
 
     /**
@@ -109,8 +116,9 @@ enum ApplicationStatus: string
             self::Waiting => 3,
             self::Sent => 4,
             self::Rejected => 5,
-            self::Unsent => 6,
-            self::Unsuitable => 7,
+            self::Later => 6,
+            self::Unsent => 7,
+            self::Unsuitable => 8,
         };
     }
 

@@ -36,21 +36,23 @@ class ScreensTest extends TestCase
 
     public function test_later_groups_companies_by_topic(): void
     {
-        Company::factory()->create(['name' => 'SAMTECH', 'future' => 'Java']);
-        Company::factory()->create(['name' => 'Verteco', 'future' => 'Node.js']);
-        Company::factory()->create(['name' => 'Bez témy']);
+        Company::factory()->state(['status' => ApplicationStatus::Later, 'name' => 'SAMTECH', 'future' => 'Java'])->create();
+        Company::factory()->state(['status' => ApplicationStatus::Later, 'name' => 'Verteco', 'future' => 'Node.js'])->create();
+        Company::factory()->state(['status' => ApplicationStatus::Later, 'name' => 'Bez nápadu'])->create();
+        Company::factory()->create(['name' => 'Len neposlaná', 'future' => 'PHP']);
 
         $this->get(route('later'))
             ->assertOk()
-            ->assertSeeInOrder(['Java', 'SAMTECH', 'Node.js', 'Verteco'])
-            ->assertDontSee('Bez témy');
+            ->assertSeeInOrder(['Bez témy', 'Bez nápadu', 'Java', 'SAMTECH', 'Node.js', 'Verteco'])
+            ->assertDontSee('Len neposlaná');
     }
 
     public function test_later_explains_when_it_is_empty(): void
     {
         $this->get(route('later'))
             ->assertOk()
-            ->assertSee('Zatiaľ tu nič nie je.');
+            ->assertSee('Zatiaľ tu nič nie je.')
+            ->assertSee('Na neskôr');
     }
 
     public function test_navigation_marks_the_current_screen(): void

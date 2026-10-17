@@ -32,7 +32,7 @@ class OverviewController extends Controller
             'activeStatus' => $status,
             'search' => $search,
             'filters' => [null, ...array_filter(
-                [...ApplicationStatus::tracked(), ApplicationStatus::Unsent, ApplicationStatus::Unsuitable],
+                [...ApplicationStatus::tracked(), ApplicationStatus::Unsent, ApplicationStatus::Later, ApplicationStatus::Unsuitable],
                 fn (ApplicationStatus $filter): bool => $filter !== ApplicationStatus::Waiting || $counts[$filter->value] > 0,
             )],
             'statusCounts' => $counts,
@@ -96,12 +96,12 @@ class OverviewController extends Controller
     {
         return Company::query()
             ->toBase()
-            ->whereNotNull('future')
-            ->selectRaw('future, count(*) as total')
-            ->groupBy('future')
-            ->orderBy('future')
+            ->where('status', ApplicationStatus::Later)
+            ->selectRaw("coalesce(future, 'Bez témy') as topic, count(*) as total")
+            ->groupBy('topic')
+            ->orderBy('topic')
             ->get()
-            ->map(fn (object $row): string => $row->future.' · '.$row->total.' '.match (true) {
+            ->map(fn (object $row): string => $row->topic.' · '.$row->total.' '.match (true) {
                 $row->total === 1 => 'firma',
                 $row->total < 5 => 'firmy',
                 default => 'firiem',
