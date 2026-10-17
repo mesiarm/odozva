@@ -65,7 +65,7 @@
 
                 <div class="border-b border-line">
                     @forelse ($companies as $company)
-                        @php($isOpen = session()->has('opened') ? session('opened') === $company->id : $loop->first)
+                        @php($isOpen = session('opened') === $company->id)
                         <details id="company-{{ $company->id }}" name="company" class="group scroll-mt-4 border-t border-line" @if ($isOpen) open @endif>
                             <summary class="grid cursor-pointer list-none grid-cols-[minmax(0,1fr)_auto_1.25rem] items-center gap-4 py-4 marker:hidden [&::-webkit-details-marker]:hidden">
                                 <span class="flex min-w-0 flex-col">

@@ -105,6 +105,28 @@ class OverviewTest extends TestCase
             ->assertSee('Na neskôr: Java');
     }
 
+    public function test_no_company_row_is_open_by_default(): void
+    {
+        Company::factory()->count(3)->withStatus(ApplicationStatus::Sent)->create();
+
+        $this->get(route('overview'))
+            ->assertOk()
+            ->assertDontSee('<details id="company-1" name="company" class="group scroll-mt-4 border-t border-line" open', false)
+            ->assertDontSeeHtml(' open>');
+    }
+
+    public function test_the_row_that_was_just_saved_stays_open(): void
+    {
+        $company = Company::factory()->withStatus(ApplicationStatus::Sent)->create();
+        Company::factory()->withStatus(ApplicationStatus::Sent)->create();
+
+        $html = $this->withSession(['opened' => $company->id])->get(route('overview'))->assertOk()->getContent();
+
+        $this->assertSame(1, substr_count($html, '<details'.' id="company-'.$company->id.'"'));
+        $this->assertMatchesRegularExpression('/<details id="company-'.$company->id.'"[^>]*\sopen/', $html);
+        $this->assertSame(1, preg_match_all('/<details[^>]*\sopen/', $html));
+    }
+
     public function test_the_waiting_filter_only_appears_once_a_company_is_waiting(): void
     {
         $this->get(route('overview'))->assertOk()->assertDontSee('Čaká sa');
