@@ -58,7 +58,7 @@
                                 'bg-ink text-paper' => $isActive,
                                 'text-subtle hover:bg-soft' => ! $isActive,
                             ])
-                        >{{ $filter?->label() ?? 'Všetky' }}</a>
+                        >{{ $filter?->label() ?? 'Všetky' }} <span @class(['ml-0.5 tabular-nums', 'text-paper/70' => $isActive, 'text-muted' => ! $isActive])>{{ $filter ? $statusCounts[$filter->value] : $totalCount }}</span></a>
                     @endforeach
                 </div>
 

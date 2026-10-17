@@ -53,6 +53,28 @@ class OverviewTest extends TestCase
             ->assertDontSee('Hardvér s.r.o.');
     }
 
+    public function test_filters_show_how_many_companies_have_each_status(): void
+    {
+        Company::factory()->count(2)->withStatus(ApplicationStatus::Sent)->create();
+        Company::factory()->withStatus(ApplicationStatus::Rejected)->create();
+        Company::factory()->count(3)->create();
+
+        $html = $this->get(route('overview'))->assertOk()->getContent();
+
+        foreach (['Všetky' => 6, 'Poslané' => 2, 'Zamietnuté' => 1, 'Neposlané' => 3, 'Nevhodné' => 0] as $label => $count) {
+            $this->assertMatchesRegularExpression('/'.$label.'\s*<span[^>]*>'.$count.'<\/span>/u', $html, $label);
+        }
+    }
+
+    public function test_the_waiting_filter_only_appears_once_a_company_is_waiting(): void
+    {
+        $this->get(route('overview'))->assertOk()->assertDontSee('Čaká sa');
+
+        Company::factory()->withStatus(ApplicationStatus::Waiting)->create();
+
+        $this->get(route('overview'))->assertOk()->assertSee('Čaká sa');
+    }
+
     public function test_overview_invites_you_to_add_a_company_when_there_are_none(): void
     {
         $this->get(route('overview'))
