@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
-#[Fillable(['name', 'status', 'sent_at', 'channel', 'position', 'web', 'future', 'reason', 'note', 'focus'])]
+#[Fillable(['name', 'location', 'status', 'sent_at', 'channel', 'position', 'web', 'future', 'reason', 'note', 'focus'])]
 class Company extends Model
 {
     /** @use HasFactory<CompanyFactory> */
@@ -38,25 +38,28 @@ class Company extends Model
      */
     protected function summaryLine(): Attribute
     {
-        return Attribute::get(function (): string {
-            if ($this->status === ApplicationStatus::Unsuitable) {
-                return $this->reason ? 'Nevhodné: '.Str::limit($this->reason, 80) : 'Nevhodné';
-            }
+        return Attribute::get(fn (): string => collect([$this->location, $this->statusLine()])->filter()->implode(' · '));
+    }
 
-            if ($this->status === ApplicationStatus::Later) {
-                return $this->future ? 'Na neskôr: '.Str::limit($this->future, 80) : 'Na neskôr';
-            }
+    private function statusLine(): string
+    {
+        if ($this->status === ApplicationStatus::Unsuitable) {
+            return $this->reason ? 'Nevhodné: '.Str::limit($this->reason, 80) : 'Nevhodné';
+        }
 
-            if ($this->status === ApplicationStatus::Unsent) {
-                return 'Zatiaľ neposlané';
-            }
+        if ($this->status === ApplicationStatus::Later) {
+            return $this->future ? 'Na neskôr: '.Str::limit($this->future, 80) : 'Na neskôr';
+        }
 
-            return collect([
-                $this->sent_at ? 'Poslané '.$this->sent_at->format('j. n.') : 'Poslané, dátum neuvedený',
-                $this->channel,
-                $this->status === ApplicationStatus::Rejected && $this->reason ? Str::limit($this->reason, 80) : null,
-            ])->filter()->implode(' · ');
-        });
+        if ($this->status === ApplicationStatus::Unsent) {
+            return 'Zatiaľ neposlané';
+        }
+
+        return collect([
+            $this->sent_at ? 'Poslané '.$this->sent_at->format('j. n.') : 'Poslané, dátum neuvedený',
+            $this->channel,
+            $this->status === ApplicationStatus::Rejected && $this->reason ? Str::limit($this->reason, 80) : null,
+        ])->filter()->implode(' · ');
     }
 
     /**

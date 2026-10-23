@@ -127,6 +127,54 @@ class OverviewTest extends TestCase
         $this->assertSame(1, preg_match_all('/<details[^>]*\sopen/', $html));
     }
 
+    public function test_companies_can_be_filtered_by_location(): void
+    {
+        Company::factory()->withStatus(ApplicationStatus::Sent)->create(['name' => 'Žilinská firma', 'location' => 'Žilina']);
+        Company::factory()->withStatus(ApplicationStatus::Sent)->create(['name' => 'Bratislavská firma', 'location' => 'Bratislava']);
+        Company::factory()->withStatus(ApplicationStatus::Sent)->create(['name' => 'Firma bez miesta', 'location' => null]);
+
+        $this->get(route('overview', ['lokalita' => 'Bratislava']))
+            ->assertOk()
+            ->assertSee('Bratislavská firma')
+            ->assertDontSee('Žilinská firma')
+            ->assertDontSee('Firma bez miesta');
+
+        $this->get(route('overview'))
+            ->assertOk()
+            ->assertSee('Žilinská firma')
+            ->assertSee('Bratislavská firma')
+            ->assertSee('Firma bez miesta');
+    }
+
+    public function test_the_location_filter_lists_every_location_with_its_count(): void
+    {
+        Company::factory()->count(2)->create(['location' => 'Žilina']);
+        Company::factory()->create(['location' => 'Bratislava']);
+
+        $html = $this->get(route('overview'))->assertOk()->assertSee('id="location-filter"', false)->getContent();
+
+        $this->assertMatchesRegularExpression('/Všetky\s*<span[^>]*>3<\/span>/u', $html);
+        $this->assertMatchesRegularExpression('/Žilina\s*<span[^>]*>2<\/span>/u', $html);
+        $this->assertMatchesRegularExpression('/Bratislava\s*<span[^>]*>1<\/span>/u', $html);
+    }
+
+    public function test_status_counts_follow_the_selected_location(): void
+    {
+        Company::factory()->count(2)->withStatus(ApplicationStatus::Sent)->create(['location' => 'Žilina']);
+        Company::factory()->withStatus(ApplicationStatus::Sent)->create(['location' => 'Bratislava']);
+
+        $html = $this->get(route('overview', ['lokalita' => 'Bratislava']))->assertOk()->getContent();
+
+        $this->assertMatchesRegularExpression('/Poslané\s*<span[^>]*>1<\/span>/u', $html);
+    }
+
+    public function test_the_location_filter_is_hidden_while_there_is_only_one_location(): void
+    {
+        Company::factory()->count(2)->create(['location' => 'Žilina']);
+
+        $this->get(route('overview'))->assertOk()->assertDontSee('id="location-filter"', false);
+    }
+
     public function test_the_waiting_filter_only_appears_once_a_company_is_waiting(): void
     {
         $this->get(route('overview'))->assertOk()->assertDontSee('Čaká sa');

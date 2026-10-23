@@ -10,8 +10,8 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
-#[Signature('companies:import {path : UTF-8 CSV exported from the main sheet of the IT firms spreadsheet} {--year= : Year of the dates in the notes (defaults to the current year)} {--dry-run : Show what would be imported without saving}')]
-#[Description('Import companies from a CSV export of the "IT firmy Žilina" spreadsheet; companies that already exist are left untouched')]
+#[Signature('companies:import {path : UTF-8 CSV exported from a sheet of the IT firms spreadsheet ("IT firmy Žilina" or "Mimo Žiliny")} {--year= : Year of the dates in the notes (defaults to the current year)} {--location=Žilina : Location given to companies of the main sheet} {--dry-run : Show what would be imported without saving}')]
+#[Description('Import companies from a CSV export of the IT firms spreadsheet; companies that already exist are left untouched')]
 class ImportCompanies extends Command
 {
     public function handle(): int
@@ -37,7 +37,7 @@ class ImportCompanies extends Command
 
         $year = (int) ($this->option('year') ?: now()->year);
         $created = collect();
-        $skipped = 0;
+        $skipped = collect();
 
         while (($row = fgetcsv($handle, escape: '\\')) !== false) {
             $attributes = $this->attributesFor($row, $columns, $year);
@@ -47,7 +47,7 @@ class ImportCompanies extends Command
             }
 
             if (Company::query()->where('name', $attributes['name'])->exists()) {
-                $skipped++;
+                $skipped->push($attributes['name']);
 
                 continue;
             }
@@ -61,7 +61,11 @@ class ImportCompanies extends Command
 
         fclose($handle);
 
-        $this->components->info(($this->option('dry-run') ? 'Naimportovalo by sa ' : 'Naimportovaných ').$created->count().' firiem, preskočených '.$skipped.' (už existujú).');
+        $this->components->info(($this->option('dry-run') ? 'Naimportovalo by sa ' : 'Naimportovaných ').$created->count().' firiem, preskočených '.$skipped->count().' (už existujú).');
+
+        if ($skipped->isNotEmpty() && $skipped->count() <= 10) {
+            $this->line('Preskočené: '.$skipped->implode(', '));
+        }
 
         $this->table(
             ['Stav', 'Počet'],
@@ -83,6 +87,7 @@ class ImportCompanies extends Command
     private function resolveColumns(array $header): array
     {
         $wanted = [
+            'index' => '#',
             'name' => 'Firma',
             'web' => 'Web',
             'summary' => 'Zameranie',
@@ -90,6 +95,12 @@ class ImportCompanies extends Command
             'activity' => 'Email',
             'unsuitable' => 'Nevhodné',
             'focus' => 'Čo robia',
+            'position' => 'Pozícia',
+            'place' => 'Poloha (',
+            'via' => 'Kanál',
+            'applied' => 'Prihlásené',
+            'state' => 'Stav',
+            'lastNote' => 'Posledná správa',
         ];
 
         $columns = [];
@@ -118,10 +129,22 @@ class ImportCompanies extends Command
 
         $name = $cell('name');
 
-        if ($name === '') {
+        if ($name === '' || (isset($columns['index']) && ! ctype_digit($cell('index')))) {
             return null;
         }
 
+        return isset($columns['applied'])
+            ? $this->applicationAttributes($cell, $name, $year)
+            : $this->listAttributes($cell, $name, $year);
+    }
+
+    /**
+     * A row of the main sheet: companies to approach, with the history of sent mails in the "Email" column.
+     *
+     * @return array<string, mixed>
+     */
+    private function listAttributes(callable $cell, string $name, int $year): array
+    {
         $activity = $cell('activity');
         $unsuitable = $cell('unsuitable');
         $status = $this->statusFor($activity, $unsuitable);
@@ -129,6 +152,7 @@ class ImportCompanies extends Command
         return [
             'name' => $name,
             'status' => $status,
+            'location' => $this->option('location') ?: null,
             'sent_at' => $status->hasBeenSent() ? $this->sentDate($activity, $year) : null,
             'channel' => $status->hasBeenSent() ? $this->channel($activity) : null,
             'web' => $this->host($cell('web')),
@@ -136,6 +160,59 @@ class ImportCompanies extends Command
             'focus' => $cell('focus') ?: $cell('summary') ?: null,
             'note' => collect([$activity, $cell('note')])->filter()->implode("\n") ?: null,
         ];
+    }
+
+    /**
+     * A row of the "Mimo Žiliny" sheet: applications that were sent to companies outside the main list.
+     *
+     * @return array<string, mixed>
+     */
+    private function applicationAttributes(callable $cell, string $name, int $year): array
+    {
+        $state = $cell('state');
+        $lastNote = $cell('lastNote');
+        $status = $this->applicationStatus($state);
+        $position = $cell('position');
+
+        return [
+            'name' => $name,
+            'status' => $status,
+            'location' => $this->city($cell('place')),
+            'position' => Str::contains($position, ['v e-maile nie je', 'v e-maile je skrátený']) ? null : ($position ?: null),
+            'channel' => $status->hasBeenSent() ? ($cell('via') ?: null) : null,
+            'sent_at' => $status->hasBeenSent() ? $this->sentDate($cell('applied'), $year) : null,
+            'reason' => $status === ApplicationStatus::Unsuitable ? ($lastNote ?: null) : null,
+            'note' => collect([
+                $state !== 'Bez odpovede' ? $state : '',
+                $status === ApplicationStatus::Unsuitable ? '' : $lastNote,
+            ])->filter()->implode("\n") ?: null,
+        ];
+    }
+
+    private function applicationStatus(string $state): ApplicationStatus
+    {
+        return match (true) {
+            Str::startsWith($state, 'Zamietnuté') => ApplicationStatus::Rejected,
+            Str::startsWith($state, 'Stiahol si sa') => ApplicationStatus::Unsuitable,
+            Str::startsWith($state, 'Pozvánka') => ApplicationStatus::Interview,
+            Str::contains($state, ['čaká sa', 'pozastavené', 'prijaté'], ignoreCase: true) => ApplicationStatus::Waiting,
+            Str::contains($state, 'nedokončená', ignoreCase: true) => ApplicationStatus::Unsent,
+            default => ApplicationStatus::Sent,
+        };
+    }
+
+    /**
+     * The city is the text before the first bracket; "neuvedená v e-maile" and similar means unknown.
+     */
+    private function city(string $place): ?string
+    {
+        $city = trim(Str::before($place, ' ('));
+
+        if ($city === '' || Str::startsWith(Str::lower($city), ['neuved', 'neoveren'])) {
+            return null;
+        }
+
+        return $city;
     }
 
     private function reasonFor(ApplicationStatus $status, string $activity, string $unsuitable): ?string

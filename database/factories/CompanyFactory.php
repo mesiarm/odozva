@@ -20,6 +20,7 @@ class CompanyFactory extends Factory
     {
         return [
             'name' => fake()->unique()->company(),
+            'location' => 'Žilina',
             'status' => ApplicationStatus::Unsent,
             'sent_at' => null,
             'channel' => null,

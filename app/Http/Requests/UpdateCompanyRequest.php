@@ -15,6 +15,7 @@ class UpdateCompanyRequest extends FormRequest
     {
         return [
             'status' => ['required', Rule::enum(ApplicationStatus::class)],
+            'location' => ['nullable', 'string', 'max:255'],
             'sent_at' => ['nullable', 'date', 'before_or_equal:today'],
             'position' => ['nullable', 'string', 'max:255'],
             'future' => ['nullable', 'string', 'max:255'],

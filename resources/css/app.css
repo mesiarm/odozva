@@ -33,3 +33,10 @@
     --color-rejected: #8f1d2c;
     --color-rejected-soft: #f6e1e1;
 }
+
+@layer base {
+    button:not(:disabled),
+    [role='button']:not(:disabled) {
+        cursor: pointer;
+    }
+}

@@ -16,21 +16,28 @@ class OverviewController extends Controller
     {
         $status = ApplicationStatus::tryFrom($request->string('stav')->toString());
         $search = $request->string('q')->trim()->toString();
+        $location = $request->string('lokalita')->trim()->toString() ?: null;
 
         $companies = Company::query()
             ->when($status, fn ($query, ApplicationStatus $status) => $query->where('status', $status))
+            ->when($location, fn ($query, string $location) => $query->where('location', $location))
             ->when($search !== '', fn ($query) => $query->where('name', 'like', '%'.$search.'%'))
             ->byRelevance()
             ->get();
 
-        $counts = $this->statusCounts();
-        $unsentCount = $counts[ApplicationStatus::Unsent->value];
+        $allCounts = $this->statusCounts();
+        $counts = $location ? $this->statusCounts($location) : $allCounts;
+        $unsentCount = $allCounts[ApplicationStatus::Unsent->value];
+        $locations = $this->locations();
 
         return view('overview', [
             'companies' => $companies,
             'interviewCompany' => Company::query()->where('status', ApplicationStatus::Interview)->first(),
             'activeStatus' => $status,
             'search' => $search,
+            'activeLocation' => $location,
+            'locations' => $locations,
+            'allCount' => array_sum($allCounts),
             'filters' => [null, ...array_filter(
                 [...ApplicationStatus::tracked(), ApplicationStatus::Unsent, ApplicationStatus::Later, ApplicationStatus::Unsuitable],
                 fn (ApplicationStatus $filter): bool => $filter !== ApplicationStatus::Waiting || $counts[$filter->value] > 0,
@@ -38,7 +45,7 @@ class OverviewController extends Controller
             'statusCounts' => $counts,
             'totalCount' => array_sum($counts),
             'statuses' => ApplicationStatus::cases(),
-            'summary' => $this->summary($counts),
+            'summary' => $this->summary($allCounts),
             'drafts' => Company::query()
                 ->where('status', ApplicationStatus::Unsent)
                 ->orderBy('name')
@@ -54,10 +61,11 @@ class OverviewController extends Controller
      *
      * @return array<string, int>
      */
-    private function statusCounts(): array
+    private function statusCounts(?string $location = null): array
     {
         $counts = Company::query()
             ->toBase()
+            ->when($location, fn ($query, string $location) => $query->where('location', $location))
             ->selectRaw('status, count(*) as total')
             ->groupBy('status')
             ->pluck('total', 'status');
@@ -65,6 +73,23 @@ class OverviewController extends Controller
         return collect(ApplicationStatus::cases())
             ->mapWithKeys(fn (ApplicationStatus $status): array => [$status->value => (int) ($counts[$status->value] ?? 0)])
             ->all();
+    }
+
+    /**
+     * Locations with the number of companies in each, Žilina first.
+     *
+     * @return Collection<int, object{location: string, total: int}>
+     */
+    private function locations(): Collection
+    {
+        return Company::query()
+            ->toBase()
+            ->whereNotNull('location')
+            ->selectRaw('location, count(*) as total')
+            ->groupBy('location')
+            ->orderByRaw("location = 'Žilina' desc")
+            ->orderBy('location')
+            ->get();
     }
 
     /**

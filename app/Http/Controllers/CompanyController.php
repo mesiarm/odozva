@@ -15,6 +15,7 @@ class CompanyController extends Controller
     {
         return view('companies.create', [
             'statuses' => ApplicationStatus::cases(),
+            'locations' => Company::query()->whereNotNull('location')->distinct()->orderBy('location')->pluck('location'),
         ]);
     }
 

@@ -74,13 +74,13 @@ class CompanyTest extends TestCase
 
     public function test_an_unsuitable_company_can_be_created_with_a_reason(): void
     {
-        $this->post(route('companies.store'), ['name' => 'Hardvér', 'status' => 'nevhodne', 'reason' => 'HW + linux']);
+        $this->post(route('companies.store'), ['name' => 'Hardvér', 'status' => 'nevhodne', 'reason' => 'HW + linux', 'location' => 'Žilina']);
 
         $company = Company::firstWhere('name', 'Hardvér');
 
         $this->assertSame(ApplicationStatus::Unsuitable, $company->status);
         $this->assertSame('HW + linux', $company->reason);
-        $this->assertSame('Nevhodné: HW + linux', $company->summary_line);
+        $this->assertSame('Žilina · Nevhodné: HW + linux', $company->summary_line);
     }
 
     public function test_a_rejection_can_be_recorded_with_the_date_the_application_was_sent(): void
@@ -205,7 +205,19 @@ class CompanyTest extends TestCase
 
         $this->assertSame(ApplicationStatus::Later, $company->status);
         $this->assertNull($company->sent_at);
-        $this->assertSame('Na neskôr: Node.js', $company->summary_line);
+        $this->assertSame('Žilina · Na neskôr: Node.js', $company->summary_line);
+    }
+
+    public function test_the_location_can_be_set_when_creating_and_updating_a_company(): void
+    {
+        $this->post(route('companies.store'), ['name' => 'Henley', 'status' => 'pohovor', 'location' => 'Bratislava']);
+
+        $company = Company::firstWhere('name', 'Henley');
+        $this->assertSame('Bratislava', $company->location);
+
+        $this->patch(route('companies.update', $company), ['status' => 'pohovor', 'location' => 'Žilina']);
+
+        $this->assertSame('Žilina', $company->fresh()->location);
     }
 
     public function test_the_company_web_opens_in_the_browser_outside_the_native_app(): void

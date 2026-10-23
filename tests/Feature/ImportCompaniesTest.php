@@ -129,4 +129,69 @@ class ImportCompaniesTest extends TestCase
     {
         $this->artisan('companies:import', ['path' => $this->path.'.neexistuje'])->assertFailed();
     }
+
+    public function test_it_gives_companies_of_the_main_sheet_a_location(): void
+    {
+        $this->artisan('companies:import', ['path' => $this->path]);
+        $this->assertSame('Žilina', Company::firstWhere('name', 'CODIUM')->location);
+
+        $this->artisan('companies:import', ['path' => $this->path, '--location' => 'Bratislava']);
+        $this->assertSame('Žilina', Company::firstWhere('name', 'CODIUM')->location);
+    }
+
+    public function test_it_imports_the_sheet_with_companies_outside_zilina(): void
+    {
+        $path = tempnam(sys_get_temp_dir(), 'applications');
+
+        $rows = [
+            ['#', 'Firma', 'Pozícia', 'Poloha (a odkiaľ to viem)', 'Kanál', 'Prihlásené', 'Stav', 'Posledná správa / poznámka'],
+            [1, 'ESET', 'PHP Software Engineer', 'Bratislava (sídlo firmy; v e-maile neuvedené)', 'Workday (kariérny portál)', '30. 9.', 'Zamietnuté 5. 10.', 'Po zhodnotení profilu zamietnuté.'],
+            [2, 'Henley', 'Web Developer', 'Bratislava (Pribinova 4)', 'Pozvánka od HR', '–', 'Pozvánka na 1. kolo 7. 10. o 16:00', 'Zoom, po anglicky.'],
+            [3, 'Takoy', 'Pozícia z Profesie (názov v e-maile nie je)', 'Bardejov (kancelária)', 'Profesia', '–', 'Stiahol si sa 9. 10.', 'Miesto výkonu práce nevyhovuje.'],
+            [4, 'AT&T', 'PHP Developer', 'neuvedená v e-maile', 'Workday', '30. 9.', 'Prijaté, čaká sa', 'Potvrdenie z 30. 9.'],
+            [5, 'Servers.com', 'Backend Developer', 'neuvedená v e-maile', 'Profesia', '13. 10.', 'Bez odpovede', 'Len potvrdenie reakcie z Profesie.'],
+            [6, 'OpsArmy', 'Pozícia v e-maile nie je', 'neuvedená v e-maile', 'Kariérny portál', '–', 'Prihláška asi nedokončená', '1. 10. pripomienka.'],
+            ['', 'Poznámky', '', '', '', '', '', ''],
+            ['', 'Zdroj: Gmail', '', '', '', '', '', ''],
+        ];
+
+        $handle = fopen($path, 'wb');
+
+        foreach ($rows as $row) {
+            fputcsv($handle, $row, escape: '\\');
+        }
+
+        fclose($handle);
+
+        $this->artisan('companies:import', ['path' => $path, '--year' => 2026])->assertSuccessful();
+
+        @unlink($path);
+
+        $this->assertDatabaseCount('companies', 6);
+        $this->assertDatabaseMissing('companies', ['name' => 'Poznámky']);
+
+        $eset = Company::firstWhere('name', 'ESET');
+        $this->assertSame('Bratislava', $eset->location);
+        $this->assertSame(ApplicationStatus::Rejected, $eset->status);
+        $this->assertSame('2026-09-30', $eset->sent_at->toDateString());
+        $this->assertSame('Workday (kariérny portál)', $eset->channel);
+        $this->assertSame("Zamietnuté 5. 10.\nPo zhodnotení profilu zamietnuté.", $eset->note);
+
+        $this->assertSame(ApplicationStatus::Interview, Company::firstWhere('name', 'Henley')->status);
+        $this->assertNull(Company::firstWhere('name', 'Henley')->sent_at);
+
+        $takoy = Company::firstWhere('name', 'Takoy');
+        $this->assertSame(ApplicationStatus::Unsuitable, $takoy->status);
+        $this->assertSame('Miesto výkonu práce nevyhovuje.', $takoy->reason);
+        $this->assertNull($takoy->position);
+
+        $this->assertNull(Company::firstWhere('name', 'AT&T')->location);
+        $this->assertSame(ApplicationStatus::Waiting, Company::firstWhere('name', 'AT&T')->status);
+        $this->assertSame(ApplicationStatus::Sent, Company::firstWhere('name', 'Servers.com')->status);
+        $this->assertSame('Len potvrdenie reakcie z Profesie.', Company::firstWhere('name', 'Servers.com')->note);
+
+        $opsArmy = Company::firstWhere('name', 'OpsArmy');
+        $this->assertSame(ApplicationStatus::Unsent, $opsArmy->status);
+        $this->assertNull($opsArmy->channel);
+    }
 }

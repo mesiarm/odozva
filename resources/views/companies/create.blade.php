@@ -35,6 +35,15 @@
 
             <div class="grid gap-6 sm:grid-cols-2">
                 <label class="flex flex-col gap-1.5 text-[13px] text-muted">
+                    Lokalita
+                    <input type="text" name="location" value="{{ old('location', 'Žilina') }}" list="locations" maxlength="255" placeholder="napr. Bratislava" class="h-11 rounded-xl bg-soft px-4 text-[15px] text-ink outline-none placeholder:text-muted focus:ring-2 focus:ring-ink">
+                    <datalist id="locations">
+                        @foreach ($locations as $place)
+                            <option value="{{ $place }}"></option>
+                        @endforeach
+                    </datalist>
+                </label>
+                <label class="flex flex-col gap-1.5 text-[13px] text-muted">
                     Dátum odoslania
                     <input type="date" name="sent_at" value="{{ old('sent_at') }}" max="{{ today()->toDateString() }}" class="h-11 rounded-xl bg-soft px-4 text-[15px] text-ink outline-none focus:ring-2 focus:ring-ink">
                 </label>

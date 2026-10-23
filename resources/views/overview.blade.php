@@ -5,6 +5,9 @@
                 @if ($activeStatus)
                     <input type="hidden" name="stav" value="{{ $activeStatus->value }}">
                 @endif
+                @if ($activeLocation)
+                    <input type="hidden" name="lokalita" value="{{ $activeLocation }}">
+                @endif
                 <label class="flex h-10 w-full items-center gap-2 sm:w-56 rounded-full bg-soft px-4 focus-within:ring-2 focus-within:ring-ink">
                     <svg class="size-4 shrink-0 text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
                     <span class="sr-only">Nájsť firmu</span>
@@ -52,7 +55,7 @@
                     @foreach ($filters as $filter)
                         @php($isActive = $filter === $activeStatus)
                         <a
-                            href="{{ route('overview', array_filter(['stav' => $filter?->value, 'q' => $search])) }}"
+                            href="{{ route('overview', array_filter(['stav' => $filter?->value, 'lokalita' => $activeLocation, 'q' => $search])) }}"
                             @if ($isActive) aria-current="true" @endif
                             @class([
                                 'rounded-full px-3.5 py-1 text-[13px]',
@@ -62,6 +65,30 @@
                         >{{ $filter?->label() ?? 'Všetky' }} <span @class(['ml-0.5 tabular-nums', 'text-paper/70' => $isActive, 'text-muted' => ! $isActive])>{{ $filter ? $statusCounts[$filter->value] : $totalCount }}</span></a>
                     @endforeach
                 </div>
+
+                @if ($locations->count() > 1 || $activeLocation)
+                    <div id="location-filter" class="mb-3 flex flex-wrap items-baseline gap-x-2 gap-y-2">
+                        <span class="mr-1 text-[13px] text-muted">Lokalita</span>
+                        @foreach ([null, ...$locations->pluck('location')->all()] as $place)
+                            @php($isPlaceActive = $place === $activeLocation)
+                            <a
+                                href="{{ route('overview', array_filter(['stav' => $activeStatus?->value, 'lokalita' => $place, 'q' => $search])) }}"
+                                @if ($isPlaceActive) aria-current="true" @endif
+                                @class([
+                                    'rounded-full px-3.5 py-1 text-[13px]',
+                                    'bg-ink text-paper' => $isPlaceActive,
+                                    'text-subtle hover:bg-soft' => ! $isPlaceActive,
+                                ])
+                            >{{ $place ?? 'Všetky' }} <span @class(['ml-0.5 tabular-nums', 'text-paper/70' => $isPlaceActive, 'text-muted' => ! $isPlaceActive])>{{ $place ? $locations->firstWhere('location', $place)?->total ?? 0 : $allCount }}</span></a>
+                        @endforeach
+                    </div>
+                @endif
+
+                <datalist id="locations">
+                    @foreach ($locations as $place)
+                        <option value="{{ $place->location }}"></option>
+                    @endforeach
+                </datalist>
 
                 <div class="border-b border-line">
                     @forelse ($companies as $company)
@@ -115,6 +142,10 @@
                                     <label class="flex items-center gap-2">
                                         <span class="text-muted">Odoslané</span>
                                         <input type="date" name="sent_at" value="{{ $company->sent_at?->toDateString() }}" max="{{ today()->toDateString() }}" class="h-8 rounded-lg bg-soft px-3 outline-none focus:ring-2 focus:ring-ink">
+                                    </label>
+                                    <label class="flex items-center gap-2">
+                                        <span class="text-muted">Lokalita</span>
+                                        <input type="text" name="location" value="{{ $company->location }}" list="locations" maxlength="255" placeholder="napr. Bratislava" class="h-8 w-40 rounded-lg bg-soft px-3 outline-none placeholder:text-muted focus:ring-2 focus:ring-ink">
                                     </label>
                                     <label class="flex items-center gap-2">
                                         <span class="text-muted">Pozícia</span>
