@@ -111,7 +111,7 @@ class ImportCompaniesTest extends TestCase
         Company::factory()->create(['name' => 'CODIUM', 'note' => 'Moja poznámka']);
 
         $this->artisan('companies:import', ['path' => $this->path])
-            ->expectsOutputToContain('preskočených 1')
+            ->expectsOutputToContain('bez zmeny 1')
             ->assertSuccessful();
 
         $this->assertSame('Moja poznámka', Company::firstWhere('name', 'CODIUM')->note);
@@ -193,5 +193,100 @@ class ImportCompaniesTest extends TestCase
         $opsArmy = Company::firstWhere('name', 'OpsArmy');
         $this->assertSame(ApplicationStatus::Unsent, $opsArmy->status);
         $this->assertNull($opsArmy->channel);
+    }
+
+    public function test_importing_the_same_file_again_changes_nothing(): void
+    {
+        $this->artisan('companies:import', ['path' => $this->path]);
+
+        $this->artisan('companies:import', ['path' => $this->path])
+            ->expectsOutputToContain('nových 0, aktualizovaných 0')
+            ->assertSuccessful();
+
+        $this->assertDatabaseCount('companies', 9);
+    }
+
+    public function test_a_company_is_updated_when_its_row_in_the_sheet_changes(): void
+    {
+        $this->artisan('companies:import', ['path' => $this->path, '--year' => 2026]);
+
+        $changed = tempnam(sys_get_temp_dir(), 'changed');
+        file_put_contents($changed, str_replace(
+            'Poslané – Profesia 2. 9. (.NET medior)',
+            'Zamietnuté – pozícia obsadená (e-mail 16. 10.)',
+            file_get_contents($this->path),
+        ));
+
+        $this->artisan('companies:import', ['path' => $changed, '--year' => 2026])
+            ->expectsOutputToContain('aktualizovaných 1')
+            ->assertSuccessful();
+
+        @unlink($changed);
+
+        $codium = Company::firstWhere('name', 'CODIUM');
+
+        $this->assertSame(ApplicationStatus::Rejected, $codium->status);
+        $this->assertSame('Pozícia obsadená', $codium->reason);
+        $this->assertSame('2026-09-02', $codium->sent_at->toDateString());
+        $this->assertStringContainsString('Poslané – Profesia 2. 9. (.NET medior)', $codium->note);
+        $this->assertStringContainsString('Zamietnuté – pozícia obsadená (e-mail 16. 10.)', $codium->note);
+    }
+
+    public function test_changes_made_in_the_app_survive_while_the_sheet_row_is_unchanged(): void
+    {
+        $this->artisan('companies:import', ['path' => $this->path, '--year' => 2026]);
+
+        Company::firstWhere('name', 'Hyperia')->update(['status' => ApplicationStatus::Interview, 'note' => 'Moja poznámka']);
+
+        $changed = tempnam(sys_get_temp_dir(), 'changed');
+        file_put_contents($changed, str_replace('Poslané 14. 10. (e-mail)', 'Poslané 14. 10. (e-mail), pripomenuté 20. 10.', file_get_contents($this->path)));
+
+        $this->artisan('companies:import', ['path' => $changed, '--year' => 2026]);
+
+        @unlink($changed);
+
+        $hyperia = Company::firstWhere('name', 'Hyperia');
+
+        $this->assertSame(ApplicationStatus::Interview, $hyperia->status);
+        $this->assertSame('Moja poznámka', $hyperia->note);
+        $this->assertStringContainsString('pripomenuté 20. 10.', Company::firstWhere('name', 'eSYST')->note);
+    }
+
+    public function test_empty_cells_in_a_changed_row_keep_the_current_values(): void
+    {
+        $this->artisan('companies:import', ['path' => $this->path, '--year' => 2026]);
+
+        Company::firstWhere('name', 'eSYST')->update(['location' => 'Bratislava', 'position' => 'PHP developer']);
+
+        $changed = tempnam(sys_get_temp_dir(), 'changed');
+        file_put_contents($changed, str_replace('Poslané 14. 10. (e-mail)', 'Poslané 14. 10. (e-mail), ďalšia správa', file_get_contents($this->path)));
+
+        $this->artisan('companies:import', ['path' => $changed, '--year' => 2026, '--location' => 'Žilina']);
+
+        @unlink($changed);
+
+        $esyst = Company::firstWhere('name', 'eSYST');
+
+        $this->assertSame('Žilina', $esyst->location);
+        $this->assertSame('PHP developer', $esyst->position);
+    }
+
+    public function test_a_changed_row_without_mail_history_does_not_take_a_company_back_to_unsent(): void
+    {
+        $this->artisan('companies:import', ['path' => $this->path, '--year' => 2026]);
+
+        Company::firstWhere('name', 'Nová firma')->update(['status' => ApplicationStatus::Sent]);
+
+        $changed = tempnam(sys_get_temp_dir(), 'changed');
+        file_put_contents($changed, str_replace('Pekná firma', 'Pekná firma, doplnená poznámka', file_get_contents($this->path)));
+
+        $this->artisan('companies:import', ['path' => $changed, '--year' => 2026]);
+
+        @unlink($changed);
+
+        $company = Company::firstWhere('name', 'Nová firma');
+
+        $this->assertSame(ApplicationStatus::Sent, $company->status);
+        $this->assertStringContainsString('doplnená poznámka', $company->note);
     }
 }

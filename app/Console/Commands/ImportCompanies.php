@@ -7,11 +7,12 @@ use App\Models\Company;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
 #[Signature('companies:import {path : UTF-8 CSV exported from a sheet of the IT firms spreadsheet ("IT firmy Žilina" or "Mimo Žiliny")} {--year= : Year of the dates in the notes (defaults to the current year)} {--location=Žilina : Location given to companies of the main sheet} {--dry-run : Show what would be imported without saving}')]
-#[Description('Import companies from a CSV export of the IT firms spreadsheet; companies that already exist are left untouched')]
+#[Description('Import companies from a CSV export of the IT firms spreadsheet; companies already in the app are only updated when their row in the sheet has changed since the last import')]
 class ImportCompanies extends Command
 {
     public function handle(): int
@@ -36,8 +37,10 @@ class ImportCompanies extends Command
         }
 
         $year = (int) ($this->option('year') ?: now()->year);
+        $dryRun = (bool) $this->option('dry-run');
         $created = collect();
-        $skipped = collect();
+        $updated = collect();
+        $unchanged = 0;
 
         while (($row = fgetcsv($handle, escape: '\\')) !== false) {
             $attributes = $this->attributesFor($row, $columns, $year);
@@ -46,29 +49,54 @@ class ImportCompanies extends Command
                 continue;
             }
 
-            if (Company::query()->where('name', $attributes['name'])->exists()) {
-                $skipped->push($attributes['name']);
+            $hash = sha1(json_encode(array_map('trim', $row)));
+            $company = Company::query()->where('name', $attributes['name'])->first();
+
+            if ($company === null) {
+                if (! $dryRun) {
+                    Company::create($attributes + ['import_hash' => $hash]);
+                }
+
+                $created->push($attributes['status']);
 
                 continue;
             }
 
-            if (! $this->option('dry-run')) {
-                Company::create($attributes);
+            if ($company->import_hash === $hash) {
+                $unchanged++;
+
+                continue;
             }
 
-            $created->push($attributes['status']);
+            if ($company->import_hash !== null) {
+                $this->applySheetChanges($company, $attributes);
+            }
+
+            $company->import_hash = $hash;
+            $changedFields = array_keys(Arr::except($company->getDirty(), ['import_hash']));
+
+            if (! $dryRun) {
+                $company->save();
+            }
+
+            if ($changedFields !== []) {
+                $updated->put($company->name, $changedFields);
+            } else {
+                $unchanged++;
+            }
         }
 
         fclose($handle);
 
-        $this->components->info(($this->option('dry-run') ? 'Naimportovalo by sa ' : 'Naimportovaných ').$created->count().' firiem, preskočených '.$skipped->count().' (už existujú).');
+        $prefix = $dryRun ? 'Dry run: ' : '';
+        $this->components->info($prefix.'nových '.$created->count().', aktualizovaných '.$updated->count().', bez zmeny '.$unchanged.'.');
 
-        if ($skipped->isNotEmpty() && $skipped->count() <= 10) {
-            $this->line('Preskočené: '.$skipped->implode(', '));
+        foreach ($updated as $name => $fields) {
+            $this->line("  {$name}: ".implode(', ', $fields));
         }
 
         $this->table(
-            ['Stav', 'Počet'],
+            ['Nové firmy podľa stavu', 'Počet'],
             $created->countBy(fn (ApplicationStatus $status): string => $status->label())
                 ->map(fn (int $count, string $label): array => [$label, $count])
                 ->values()
@@ -76,6 +104,40 @@ class ImportCompanies extends Command
         );
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Take over what the sheet knows now, without wiping what was filled in the app:
+     * empty cells keep the current value and new lines are appended to the note.
+     *
+     * @param  array<string, mixed>  $attributes
+     */
+    private function applySheetChanges(Company $company, array $attributes): void
+    {
+        $fromSheet = collect($attributes)->filter(fn (mixed $value): bool => $value !== null);
+
+        // A sheet without any mail history must never take a company back to "unsent".
+        if ($fromSheet->get('status') === ApplicationStatus::Unsent) {
+            $fromSheet->forget('status');
+        }
+
+        // Dates and channels are guessed from free text, so they only fill gaps.
+        $fillGaps = ['sent_at', 'channel', 'position'];
+
+        $company->fill(
+            $fromSheet
+                ->only(['status', 'location', 'reason', ...$fillGaps])
+                ->reject(fn (mixed $value, string $key): bool => in_array($key, $fillGaps, true) && $company->getAttribute($key) !== null)
+                ->all(),
+        );
+
+        $newLines = collect(explode("\n", (string) ($attributes['note'] ?? '')))
+            ->filter()
+            ->reject(fn (string $line): bool => Str::contains((string) $company->note, $line));
+
+        if ($newLines->isNotEmpty()) {
+            $company->note = collect([$company->note, ...$newLines])->filter()->implode("\n");
+        }
     }
 
     /**
@@ -219,7 +281,11 @@ class ImportCompanies extends Command
     {
         return match ($status) {
             ApplicationStatus::Unsuitable => $unsuitable !== '' ? $unsuitable : null,
-            ApplicationStatus::Rejected => preg_match('/neprijali ma:\s*(.+)$/u', $activity, $matches) ? trim($matches[1]) : null,
+            ApplicationStatus::Rejected => match (true) {
+                (bool) preg_match('/neprijali ma:\s*(.+)$/u', $activity, $matches) => trim($matches[1]),
+                Str::contains($activity, 'pozícia obsadená', ignoreCase: true) => 'Pozícia obsadená',
+                default => null,
+            },
             default => null,
         };
     }

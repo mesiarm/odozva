@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
-#[Fillable(['name', 'location', 'status', 'sent_at', 'channel', 'position', 'web', 'future', 'reason', 'note', 'focus'])]
+#[Fillable(['name', 'location', 'status', 'sent_at', 'channel', 'position', 'web', 'future', 'reason', 'note', 'focus', 'import_hash'])]
 class Company extends Model
 {
     /** @use HasFactory<CompanyFactory> */
