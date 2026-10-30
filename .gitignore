@@ -29,7 +29,5 @@ Thumbs.db
 /.nativephp
 /dist
 
-/nativephp/electron/node_modules
-/nativephp/electron/out
-/nativephp/electron/dist
 .fuse_hidden*
+/nativephp
