@@ -175,6 +175,17 @@ class OverviewTest extends TestCase
         $this->get(route('overview'))->assertOk()->assertDontSee('id="location-filter"', false);
     }
 
+    public function test_the_summary_counts_companies_where_an_interview_took_place(): void
+    {
+        Company::factory()->withStatus(ApplicationStatus::Waiting)->create(['had_interview' => true]);
+        Company::factory()->withStatus(ApplicationStatus::Rejected)->count(2)->create(['had_interview' => true]);
+        Company::factory()->withStatus(ApplicationStatus::Interview)->create();
+
+        $html = $this->get(route('overview'))->assertOk()->getContent();
+
+        $this->assertMatchesRegularExpression('/>3<\/dd>\s*<dt[^>]*>pohovory<\/dt>/u', $html);
+    }
+
     public function test_the_waiting_filter_only_appears_once_a_company_is_waiting(): void
     {
         $this->get(route('overview'))->assertOk()->assertDontSee('Čaká sa');

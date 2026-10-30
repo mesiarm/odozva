@@ -131,6 +131,24 @@ class CompanyTest extends TestCase
         $this->assertNull($company->fresh()->sent_at);
     }
 
+    public function test_the_interview_checkbox_is_saved_and_can_be_cleared(): void
+    {
+        $company = Company::factory()->withStatus(ApplicationStatus::Sent)->create();
+
+        $this->patch(route('companies.update', $company), ['status' => 'zamietnute', 'had_interview' => '1']);
+        $this->assertTrue($company->fresh()->had_interview);
+
+        $this->patch(route('companies.update', $company), ['status' => 'zamietnute', 'had_interview' => '0']);
+        $this->assertFalse($company->fresh()->had_interview);
+    }
+
+    public function test_a_company_can_be_created_with_the_interview_flag(): void
+    {
+        $this->post(route('companies.store'), ['name' => 'Descartes', 'status' => 'caka-sa', 'had_interview' => '1']);
+
+        $this->assertTrue(Company::firstWhere('name', 'Descartes')->had_interview);
+    }
+
     public function test_a_company_can_be_updated(): void
     {
         $company = Company::factory()->withStatus(ApplicationStatus::Sent)->create();

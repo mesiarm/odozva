@@ -107,7 +107,7 @@ class OverviewController extends Controller
         return [
             'sent' => $sent,
             'replies' => $answered,
-            'interviews' => $countOf(ApplicationStatus::Interview),
+            'interviews' => Company::query()->where('had_interview', true)->count(),
             'replyRate' => $sent > 0 ? (int) round($answered / $sent * 100) : 0,
             'rejected' => $countOf(ApplicationStatus::Rejected),
             'unsent' => $counts[ApplicationStatus::Unsent->value],

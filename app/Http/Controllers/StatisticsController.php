@@ -22,7 +22,7 @@ class StatisticsController extends Controller
         $total = $byStatus->sum();
         $sent = $byStatus->only(collect(ApplicationStatus::cases())->filter->hasBeenSent()->map->value->all())->sum();
         $replied = $sent - $byStatus[ApplicationStatus::Sent->value];
-        $interviews = $byStatus[ApplicationStatus::Interview->value];
+        $interviews = Company::query()->where('had_interview', true)->count();
 
         return view('statistics', [
             'byStatus' => $byStatus,

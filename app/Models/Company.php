@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
-#[Fillable(['name', 'location', 'status', 'sent_at', 'channel', 'position', 'web', 'future', 'reason', 'note', 'focus', 'import_hash', 'web_url', 'career_url', 'address', 'location_confidence', 'location_note', 'web_check', 'source', 'summary', 'ico', 'employees', 'revenue', 'founded_on', 'registry_status'])]
+#[Fillable(['name', 'location', 'status', 'had_interview', 'sent_at', 'channel', 'position', 'web', 'future', 'reason', 'note', 'focus', 'import_hash', 'web_url', 'career_url', 'address', 'location_confidence', 'location_note', 'web_check', 'source', 'summary', 'ico', 'employees', 'revenue', 'founded_on', 'registry_status'])]
 class Company extends Model
 {
     /** @use HasFactory<CompanyFactory> */
@@ -27,6 +27,7 @@ class Company extends Model
     {
         return [
             'status' => ApplicationStatus::class,
+            'had_interview' => 'boolean',
             'sent_at' => 'date',
             'founded_on' => 'date',
             'revenue' => 'integer',

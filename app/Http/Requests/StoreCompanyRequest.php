@@ -16,6 +16,7 @@ class StoreCompanyRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'status' => ['required', Rule::enum(ApplicationStatus::class)],
+            'had_interview' => ['boolean'],
             'channel' => ['nullable', 'string', 'max:255'],
             'location' => ['nullable', 'string', 'max:255'],
             'sent_at' => ['nullable', 'date', 'before_or_equal:today'],

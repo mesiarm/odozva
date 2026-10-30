@@ -33,6 +33,12 @@
                 </div>
             </fieldset>
 
+            <label class="flex w-fit cursor-pointer items-center gap-2 text-sm">
+                <input type="hidden" name="had_interview" value="0">
+                <input type="checkbox" name="had_interview" value="1" @checked(old('had_interview')) class="size-4 accent-ink">
+                Bol som na pohovore
+            </label>
+
             <div class="grid gap-6 sm:grid-cols-2">
                 <label class="flex flex-col gap-1.5 text-[13px] text-muted">
                     Lokalita

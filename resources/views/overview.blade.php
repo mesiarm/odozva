@@ -42,7 +42,7 @@
                     <div class="mx-2 mt-5 h-px min-w-3 flex-1 bg-rule sm:mx-3"></div>
                     <div class="flex min-w-20 flex-col gap-0.5 sm:min-w-27">
                         <dd class="order-1 font-display text-4xl leading-none sm:text-[40px] text-highlight">{{ $summary['interviews'] }}</dd>
-                        <dt class="order-2 text-[13px] text-muted">pohovor</dt>
+                        <dt class="order-2 text-[13px] text-muted">{{ match (true) { $summary['interviews'] === 1 => 'pohovor', $summary['interviews'] >= 2 && $summary['interviews'] <= 4 => 'pohovory', default => 'pohovorov' } }}</dt>
                     </div>
                 </dl>
                 <p class="mb-11 text-[13px] text-muted">
@@ -138,6 +138,11 @@
                                         </label>
                                     @endforeach
                                 </fieldset>
+                                <label class="flex w-fit cursor-pointer items-center gap-2 text-sm">
+                                    <input type="hidden" name="had_interview" value="0">
+                                    <input type="checkbox" name="had_interview" value="1" @checked($company->had_interview) class="size-4 accent-ink">
+                                    Bol som na pohovore
+                                </label>
                                 <div class="flex flex-wrap items-center gap-x-8 gap-y-2 text-sm">
                                     <label class="flex items-center gap-2">
                                         <span class="text-muted">Odoslané</span>

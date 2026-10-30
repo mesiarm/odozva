@@ -14,7 +14,7 @@ class ScreensTest extends TestCase
     public function test_statistics_show_rates_and_counts_per_status(): void
     {
         Company::factory()->count(2)->withStatus(ApplicationStatus::Sent)->create();
-        Company::factory()->withStatus(ApplicationStatus::Interview)->create(['name' => 'TurTel']);
+        Company::factory()->withStatus(ApplicationStatus::Rejected)->create(['name' => 'TurTel', 'had_interview' => true]);
         Company::factory()->withStatus(ApplicationStatus::Rejected)->create();
         Company::factory()->create();
 
