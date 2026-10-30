@@ -18,6 +18,12 @@ return [
     'app_id' => env('NATIVEPHP_APP_ID', 'com.nativephp.app'),
 
     /**
+     * Optional path of a database file shared by the development window and the packaged app.
+     * NativePHP itself ignores it while APP_DEBUG is on.
+     */
+    'shared_database' => env('ODOZVA_DATABASE_PATH'),
+
+    /**
      * If your application allows deep linking, you can specify the scheme
      * to use here. This is the scheme that will be used to open your
      * application from within other applications.
